@@ -1,0 +1,216 @@
+<!DOCTYPE html><html>
+    <head>
+    <script language="JavaScript" type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
+    <!--link rel="icon" href="data:,"-->
+
+     <style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}
+       .button {
+         font-family: Segoe UI;
+         background-color: #4CAF50;
+         display: inline-block;
+         border: none;
+         color: white;
+         padding: 16px 40px;
+         text-decoration: none;
+         font-size: 24px;
+         margin: 2px;
+         cursor: pointer;
+         width: 140px;
+       }        
+       .myInput {
+         font-family: Segoe UI;
+         color: black;  
+         font-size: 30px;     
+         background: white;      
+         display: inline-block;     
+         text-align: right;    
+       } 
+       .label {"
+         font-family: Segoe UI;
+         color: black;
+         font-size: 30px;
+         background: white;
+       }
+     </style>
+
+    </head>
+
+    <body onload="onload()"><h1>Intelligente Lampe</h1>
+
+     <label class=myLabel id="_ledTheme" style="margin-left:1px;width:70px;">LED Thema</label>   
+     <!-- id 7 and 8 are reserved for dawn and dusk -->
+     <p>       
+       <div class="button" id="NEXT" onclick="valueChanged(this.id)">Vor</div>
+       <div class="button" id="PREV" onclick="valueChanged(this.id)">Zurück</div>   
+     </p>    
+     <p>        
+       <div class="button" id="0" onclick="valueChanged(this.id)">Aus</div>
+       <div class="button" id="1" onclick="valueChanged(this.id)">Feuer</div>
+       <div class="button" id="2" onclick="valueChanged(this.id)">Gelb</div>
+       <div class="button" id="3" onclick="valueChanged(this.id)">Regenbogen</div>
+       <div class="button" id="4" onclick="valueChanged(this.id)">Hell</div>
+       <div class="button" id="5" onclick="valueChanged(this.id)">Dunkel</div>
+       <div class="button" id="9" onclick="valueChanged(this.id)">Welle</div>
+       <div class="button" id="10" onclick="valueChanged(this.id)">Alarm</div>
+       <p>
+         <div class="button" id="6" onclick="valueChanged(this.id)">Wahl</div>
+         <input type="color" id="colorpicker" onchange="valueChanged(this.id)" value="#0000ff">
+       </p>
+     </p>
+     <div>
+         <input type="checkbox" id="dawnCheck" onchange="valueChanged(this.id)"/>
+         <label class="label" for="dawnCheck">Morgengrauen</label>
+       <input class="myInput" id="HOUR_DAWN_SET" style="margin-left:1px;width:60px;" onblur="valueChanged(this.id)" onclick="javascript:textSelector(this)"/>
+       <input class="myInput" id="MINUTE_DAWN_SET" style="margin-left:1px;width:60px;" onblur="valueChanged(this.id)" onclick="javascript:textSelector(this)"/>
+     </div>
+     <div>
+         <input type="checkbox" id="duskCheck" onchange="valueChanged(this.id)"/>
+         <label class="label" for="duskCheck">Dämmerung</label>
+       <input class="myInput" id="HOUR_DUSK_SET" style="margin-left:1px;width:60px;" onblur="valueChanged(this.id)" onclick="javascript:textSelector(this)"/>
+      <input class="myInput" id="MINUTE_DUSK_SET" style="margin-left:1px;width:60px;" onblur="valueChanged(this.id)" onclick="javascript:textSelector(this)"/>
+     </div>
+     <div class="button" class="button" onclick="onClickOk()">Übernehmen</div>
+
+    <Script>
+    var myOldActuals = 0;
+        
+    function onload() {
+      getTimeCall(makeTheCall,1000);
+      makeTheCall();
+    }
+
+    function valueChanged(iD){   
+      switch (iD) {
+        case 'NEXT':
+          var newValue = myOldActuals.theme + 1;
+          if (newValue >  6) {
+            newValue = 0;
+          }
+          if (!isNaN(newValue))
+            setTimeValues({"theme":newValue});
+          break;
+        case 'PREV':
+          var newValue = myOldActuals.theme - 1;
+          if (newValue <  0) {
+            newValue = 6;
+          }
+          if (!isNaN(newValue))
+            setTimeValues({"theme":newValue});
+          break;
+        case 'colorpicker':
+          var colorValue=parseInt($('#colorpicker')[0].value.replace(/^#/, ''), 16);
+          setTimeValues({"color":colorValue});
+          break;
+        case 'dawnCheck':
+          var doDawn = $('#dawnCheck')[0].checked;
+          setTimeValues({"do_dawn":doDawn});
+        case 'duskCheck':
+          var doDusk = $('#duskCheck')[0].checked;
+          setTimeValues({"do_dusk":doDusk});
+        default:
+          var theme = parseInt(iD);
+          if (!isNaN(theme))
+            setTimeValues({"theme":theme});
+          break;
+      }
+    }
+
+    function onClickOk(){
+      var hourDawnValue=parseInt(Math.abs($('#HOUR_DAWN_SET')[0].value));
+      var minuteDawnValue=parseInt(Math.abs($('#MINUTE_DAWN_SET')[0].value));
+      var hourDuskValue=parseInt(Math.abs($('#HOUR_DUSK_SET')[0].value));
+      var minuteDuskValue=parseInt(Math.abs($('#MINUTE_DUSK_SET')[0].value));
+      if (!((isNaN(hourDawnValue)) | (hourDawnValue>23.0) | (hourDawnValue<0)) && !((isNaN(minuteDawnValue)) | (minuteDawnValue>59) | (minuteDawnValue<0)) && 
+          !((isNaN(hourDuskValue)) | (hourDuskValue>23.0) | (hourDuskValue<0)) && !((isNaN(minuteDuskValue)) | (minuteDuskValue>59) | (minuteDuskValue<0)))
+        setTimeValues({"hour_dawn":hourDawnValue, "minute_dawn":minuteDawnValue, "hour_dusk":hourDuskValue, "minute_dusk":minuteDuskValue});
+      else
+        getTimeCall();
+    }
+
+    function setTimeValues(cdo){
+      $.ajaxSetup({
+          async: true,
+          cache: false
+      });
+      var def2=$.ajax({
+        method: "POST",
+        url: 'rest',
+        data: JSON.stringify(cdo),
+        contentType: "application/json;",
+        dataType: "json",
+        headers: {
+             'accept':'application/json',
+             'Cache-Control': 'no-store'
+        },
+      });
+      def2.done(function(data){
+           setTimeout(getTimeCall,200);
+      });
+    }
+
+    function textSelector(element){
+    /*bei Auswahl des Eingabefeldes wird der gesamte Inhalt markiert*/
+      $(element).select();
+    }
+
+    function makeTheCall() { 
+      $.ajaxSetup({
+        async: true,
+        cache: false
+      });
+      var def=$.ajax({
+        method: "GET",
+        url: 'read',
+        headers: {
+              'accept':'application/json',
+              'Cache-Control': 'no-store'
+        },
+      });
+      def.done(function(data){
+        if (data==="") {return};
+        //console.log(data);
+        var myActuals= data;
+
+        if (myActuals.theme != myOldActuals.theme){
+          document.getElementById('_ledTheme').innerHTML = "LED Thema " + parseInt(myActuals.theme);
+          _ledTheme = myActuals.theme; 
+        }
+        myOldActuals=myActuals;
+    
+        setTimeout(makeTheCall,200);
+      })
+    }
+
+
+    function getTimeCall() {
+      $.ajaxSetup({
+        async: true,
+        cache: false
+      });
+      var def = $.ajax({
+        method: "GET",
+        url: 'read',
+        headers: {
+          'accept': 'application/json',
+          'Cache-Control': 'no-store'
+        },
+      });
+      def.done(function(data) {
+        if (data === "") {
+          return
+        };
+        var myActuals = data;
+        document.getElementById('HOUR_DAWN_SET').value = parseInt(myActuals.hour_dawn);
+        document.getElementById('MINUTE_DAWN_SET').value = parseInt(myActuals.minute_dawn).toString().padStart(2, '0');
+        document.getElementById('HOUR_DUSK_SET').value = parseInt(myActuals.hour_dusk);
+        document.getElementById('MINUTE_DUSK_SET').value = parseInt(myActuals.minute_dusk).toString().padStart(2, '0');
+        document.getElementById('dawnCheck').checked = Boolean(myActuals.do_dawn);
+        document.getElementById('duskCheck').checked = Boolean(myActuals.do_dusk);
+        document.getElementById('colorpicker').value = "#" + parseInt(myActuals.color).toString(16).padStart(6, '0');
+      })
+    }
+
+    </Script>
+
+    </body></html>
