@@ -14,8 +14,8 @@
    version="1.1"
    id="svg16"
    inkscape:export-filename="/home/florian/Workspace/Arduino/SmartLamp/favicon.png"
-   inkscape:export-xdpi="16.415077"
-   inkscape:export-ydpi="16.415077"
+   inkscape:export-xdpi="12.191999"
+   inkscape:export-ydpi="12.191999"
    inkscape:version="1.0.1 (0767f8302a, 2020-10-17)"
    sodipodi:docname="favicon.svg">
   <defs
@@ -50,9 +50,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.979899"
-     inkscape:cx="127.2465"
-     inkscape:cy="150.09344"
+     inkscape:zoom="2.8"
+     inkscape:cx="109.84757"
+     inkscape:cy="132.52801"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -70,7 +70,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
