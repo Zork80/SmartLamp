@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "/home/florian/.arduino15/packages/esp32/tools/**",
+                "/home/florian/Workspace/Arduino/libraries/**",
+                "/home/florian/arduino-1.8.13/libraries/**",
+                "/home/florian/.arduino15/packages/esp32/hardware/esp32/1.0.4/**",
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "USBCON"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "linux-gcc-x64",
+            "forcedInclude": []
+        }
+    ],
+    "version": 4
+}
