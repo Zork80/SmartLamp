@@ -24,7 +24,14 @@ bottomHeight = 33;
 wTh = 2;
 wBar = 10;
 
-stand();
+wTouch = 15;
+lTouch = 11;
+
+//panel();
+
+panelLid();
+
+//stand();
 
 //bottom();
 
@@ -64,6 +71,16 @@ module stand() {
                     }
                     translate([1,-2.5,-5])
                         cube([5,5,5]);
+                }
+                
+                hPanel = 10;
+                thPanel = 2;
+                translate([-36,25,3]) {
+                    rotate([90,0,270]) {
+                        linear_extrude(hPanel+4) {
+                            square([lTouch * 4.5, wTouch + 10]);
+                        }
+                    }
                 }
             }
             translate([0,0,bottomHeight]){
@@ -109,6 +126,124 @@ module stand() {
                             slice(r=innerD1/2, a1=350, a2=360);
                         }
                     }
+                }
+            }
+        }       
+    }
+    
+    difference(){
+        translate([-36,25,3]) {
+            rotate([90,0,270]) {
+                panel();
+            }
+        }
+        linear_extrude(bottomHeight - 1) {
+            circle(d=outerD2);                              
+        }
+    }
+}
+
+module panel() {
+    hPanel = 10;
+    //hPanel = 5;
+    thPanel = 2;
+    
+    lTerminal = 8;
+    wTerminal = 3;
+    
+    difference() {
+        linear_extrude(hPanel+4) {
+            square([lTouch * 4.5, wTouch + 10]);
+        }
+
+        translate([thPanel /2, thPanel / 2, 0]) {
+            linear_extrude(hPanel- thPanel) {
+                square([lTouch * 4.5 - thPanel, wTouch + 10 - thPanel]);
+            }
+        }
+
+        translate([thPanel /2, thPanel / 2, hPanel+thPanel]) {
+            linear_extrude(hPanel- thPanel) {
+                square([lTouch * 4.5 - thPanel, wTouch + 10 - thPanel]);
+            }
+        }
+
+        
+        translate([5,5,hPanel-thPanel+2]) {
+            linear_extrude(thPanel) {
+                square([lTouch, wTouch]);
+            }
+            translate([(lTouch-lTerminal)/2,0,-2]) {
+                linear_extrude(thPanel) {
+                    square([lTerminal, wTerminal]);
+                }
+            }
+        }
+        
+        translate([lTouch * 3.5 - 5,5,hPanel-thPanel+2]) {
+            linear_extrude(thPanel) {
+                square([lTouch, wTouch]);
+            }
+            translate([(lTouch-lTerminal)/2,0,-2]) {
+                linear_extrude(thPanel) {
+                    square([lTerminal, wTerminal]);
+                }
+            }
+        }
+    }
+    
+    
+    wTouch = 15;
+    lTouch = 11;
+}
+
+module panelLid() {
+    hLid = 1.5;
+    thPanel = 2;
+    
+    lTerminal = 8;
+    wTerminal = 3;
+    
+    difference() {
+        union(){
+            linear_extrude(hLid) {
+                square([lTouch * 4.5, wTouch + 10]);
+            }
+            translate([thPanel / 2,thPanel / 2, 0]) {
+                linear_extrude(hLid*2) {
+                    square([lTouch * 4.5 - thPanel, wTouch + 10 - thPanel]);
+                }
+            }
+        }
+        
+        translate([5,5,hLid]) {
+            translate([(lTouch-lTerminal)/2,0,0]) {
+                linear_extrude(thPanel) {
+                    square([lTerminal, wTerminal]);
+                }
+            }
+        }
+        
+        translate([lTouch * 3.5 - 5,5,hLid]) {
+            translate([(lTouch-lTerminal)/2,0,0]) {
+                linear_extrude(thPanel) {
+                    square([lTerminal, wTerminal]);
+                }
+            }
+        }
+        
+        translate([9,15,0]) {
+            translate([(lTouch-lTerminal)/2,0,0]) {
+                linear_extrude(0.5) {
+                    circle(d=10);
+                }
+            }
+        }
+        
+        translate([lTouch * 3.5 -1,15,0]) {
+            translate([(lTouch-lTerminal)/2,0,0]) {
+                linear_extrude(0.5) {
+                    circle(d=10);
                 }
             }
         }

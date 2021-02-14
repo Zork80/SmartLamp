@@ -184,6 +184,18 @@ void setup()
     request->send(SPIFFS, "/jquery-3.5.1.min.js", "text/javascript");
   });
 
+  server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/bootstrap.min.css", "text/css");
+  });
+
+  server.on("/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/bootstrap.bundle.min.js", "text/javascript");
+  });
+
+  server.on("/SmartLamp.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/SmartLamp.js", "text/javascript");
+  });
+
   server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/favicon.ico", "image/ico");
   });
