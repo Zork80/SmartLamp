@@ -239,7 +239,7 @@ void handle_rest(AsyncWebServerRequest *request, uint8_t *data, size_t len, size
     String msg = error.c_str();
 
     request->send(400, F("text/html"),
-                "Error in parsin json body! <br>" + msg);
+                "Error in parsing json body! <br>" + msg);
 
   } else {
     JsonObject postObj = doc.as<JsonObject>();
@@ -353,14 +353,18 @@ int timeCounter = 0;
 void Task1code( void * parameter) {
   for (;;) {
     setLed(_ledTheme);
-    delay(50);
+    delay(100);
 
     if (timeCounter > 10)
     {
       timeCounter = 0;
-      if (!getLocalTime(&timeinfo)) {
+      struct tm timeinfo_tmp;
+      if (!getLocalTime(&timeinfo_tmp)) {
         Serial.println("Failed to obtain time");
         return;
+      }
+      else {
+        timeinfo = timeinfo_tmp;
       }
     }
     timeCounter++;

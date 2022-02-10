@@ -7,7 +7,8 @@
                 "/home/florian/Workspace/Arduino/libraries/**",
                 "/home/florian/arduino-1.8.13/libraries/**",
                 "/home/florian/.arduino15/packages/esp32/hardware/esp32/1.0.4/**",
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/home/florian/.arduino15/packages/esp32/hardware/esp32/1.0.6/**"
             ],
             "defines": [
                 "USBCON"
