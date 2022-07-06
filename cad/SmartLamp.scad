@@ -1,5 +1,26 @@
-$fn = 250;
-//$fn = 50;
+//Render mode
+mode = "assembly"; //[print,assembly]
+
+//Render the case
+doCase = true;
+//Render the bottom
+doBottom = true;
+//Render the caddy
+doCaddy = true;
+//Render the bulp
+doBulp = true;
+
+//Diameter of the LED ring (e.g. 66 or 86)
+LED_diameter = 66;
+//Widht of the LED ring (e.g. 6 or 7)
+LED_width = 6;
+
+Scene = "Moon"; // [Moon,Earth]
+
+/* [Hidden] */
+$fn = mode=="print"?250:50;
+
+isPrintMode = mode=="print";
 
 inchIn_mm = 25.4;
 
@@ -7,8 +28,8 @@ tolerance = 1;
 
 //innerD1 = 72 - tolerance;
 //innerD2 = 86 + tolerance;
-innerD1 = 54 - tolerance;
-innerD2 = 66 + tolerance;
+innerD1 = LED_diameter - (2 * LED_width) - tolerance;
+innerD2 = LED_diameter + tolerance;
 outerD = 96;
 outerD2 = outerD -3;
 outerD3 = outerD -8;
@@ -24,25 +45,64 @@ bottomHeight = 33;
 wTh = 2;
 wBar = 10;
 
-wTouch = 15;
-lTouch = 11;
+if (doBottom)
+{
+    bottom();    
+}
 
-//panel();
+iterator1 = doBottom ? 1: 0;
+iterator2 = doCase ? iterator1 + 1: iterator1;
+iterator3 = doCaddy ? iterator2 + 1: iterator2;
 
-panelLid();
+translateCase = isPrintMode ? [0,0,0] : [0,0,2];
 
-//stand();
+translate(translateCase)
+{
+    if (doCase)
+        if(isPrintMode)
+            translate([iterator1 * (outerD + 10),0,37])
+                rotate([180,0,0])
+                    case();
+        else
+            case();
 
-//bottom();
 
-//translate([0,0,8])
-//bulp();
 
-////rotate_about_pt(180,0, [0,0,0])
-////rotate([0,0,180])
-//caddy();
+    if (doCaddy)
+    {       
+        if(isPrintMode)
+        {
+            translate([iterator2 * (outerD + 10),0,0])
+            {
+                rotate([0,0,180])
+                    caddy();
 
-//bar();
+                translate([-30, -30, 0])
+                    rotate([0,0,90])
+                        bar();
+            }
+        }
+        else
+        {
+            translate([0,0,18])
+            {
+                rotate([180,0,0])
+                    caddy();
+
+                translate([-43,-6.5,-14.9])
+                        bar();
+            }
+        }
+    }
+    
+    if (doBulp)
+        if(isPrintMode)
+            translate([iterator3 * (outerD + 10),0,-23])
+                bulp();
+        else
+            translate([0,0,11])
+                bulp();
+}
 
 // rotate as per a, v, but around point pt
 module rotate_about_pt(a, v, pt) {
@@ -52,7 +112,7 @@ module rotate_about_pt(a, v, pt) {
                 children();   
 }
 
-module stand() {
+module case() {
     difference() {
         union() {
             difference() {
@@ -71,16 +131,6 @@ module stand() {
                     }
                     translate([1,-2.5,-5])
                         cube([5,5,5]);
-                }
-                
-                hPanel = 10;
-                thPanel = 2;
-                translate([-36,25,3]) {
-                    rotate([90,0,270]) {
-                        linear_extrude(hPanel+4) {
-                            square([lTouch * 4.5, wTouch + 10]);
-                        }
-                    }
                 }
             }
             translate([0,0,bottomHeight]){
@@ -128,124 +178,6 @@ module stand() {
                     }
                 }
             }
-        }       
-    }
-    
-    difference(){
-        translate([-36,25,3]) {
-            rotate([90,0,270]) {
-                panel();
-            }
-        }
-        linear_extrude(bottomHeight - 1) {
-            circle(d=outerD2);                              
-        }
-    }
-}
-
-module panel() {
-    hPanel = 10;
-    //hPanel = 5;
-    thPanel = 2;
-    
-    lTerminal = 8;
-    wTerminal = 3;
-    
-    difference() {
-        linear_extrude(hPanel+4) {
-            square([lTouch * 4.5, wTouch + 10]);
-        }
-
-        translate([thPanel /2, thPanel / 2, 0]) {
-            linear_extrude(hPanel- thPanel) {
-                square([lTouch * 4.5 - thPanel, wTouch + 10 - thPanel]);
-            }
-        }
-
-        translate([thPanel /2, thPanel / 2, hPanel+thPanel]) {
-            linear_extrude(hPanel- thPanel) {
-                square([lTouch * 4.5 - thPanel, wTouch + 10 - thPanel]);
-            }
-        }
-
-        
-        translate([5,5,hPanel-thPanel+2]) {
-            linear_extrude(thPanel) {
-                square([lTouch, wTouch]);
-            }
-            translate([(lTouch-lTerminal)/2,0,-2]) {
-                linear_extrude(thPanel) {
-                    square([lTerminal, wTerminal]);
-                }
-            }
-        }
-        
-        translate([lTouch * 3.5 - 5,5,hPanel-thPanel+2]) {
-            linear_extrude(thPanel) {
-                square([lTouch, wTouch]);
-            }
-            translate([(lTouch-lTerminal)/2,0,-2]) {
-                linear_extrude(thPanel) {
-                    square([lTerminal, wTerminal]);
-                }
-            }
-        }
-    }
-    
-    
-    wTouch = 15;
-    lTouch = 11;
-}
-
-module panelLid() {
-    hLid = 1.5;
-    thPanel = 2;
-    
-    lTerminal = 8;
-    wTerminal = 3;
-    
-    difference() {
-        union(){
-            linear_extrude(hLid) {
-                square([lTouch * 4.5, wTouch + 10]);
-            }
-            translate([thPanel / 2,thPanel / 2, 0]) {
-                linear_extrude(hLid*2) {
-                    square([lTouch * 4.5 - thPanel, wTouch + 10 - thPanel]);
-                }
-            }
-        }
-        
-        translate([5,5,hLid]) {
-            translate([(lTouch-lTerminal)/2,0,0]) {
-                linear_extrude(thPanel) {
-                    square([lTerminal, wTerminal]);
-                }
-            }
-        }
-        
-        translate([lTouch * 3.5 - 5,5,hLid]) {
-            translate([(lTouch-lTerminal)/2,0,0]) {
-                linear_extrude(thPanel) {
-                    square([lTerminal, wTerminal]);
-                }
-            }
-        }
-        
-        translate([9,15,0]) {
-            translate([(lTouch-lTerminal)/2,0,0]) {
-                linear_extrude(0.5) {
-                    circle(d=10);
-                }
-            }
-        }
-        
-        translate([lTouch * 3.5 -1,15,0]) {
-            translate([(lTouch-lTerminal)/2,0,0]) {
-                linear_extrude(0.5) {
-                    circle(d=10);
-                }
-            }
         }
     }
 }
@@ -279,11 +211,21 @@ module bulp() {
         translate([0,0,50]) {   
             difference() {
                 union(){
-                    sphere(r = rSphere);
+                    //sphere(r = rSphere);
+                    difference(){
+                        translate([0,0,8])
+                            if(Scene == "Moon")
+                                import("Moon.stl");
+                            else if(Scene == "Earth")
+                                import("Earth.stl");
+                        translate([0,0,-28])
+                            cylinder(d = outerD, h = 4);
+                    }
                     translate([0,0,-28])
-                        cylinder(d = outerD, h = 8);
+                        cylinder(d = outerD, h = 4);
                 }
-                sphere(r = rSphere - 1);
+                //translate([0,0,4])
+                //    sphere(r = rSphere);
             }
         }
         union() {

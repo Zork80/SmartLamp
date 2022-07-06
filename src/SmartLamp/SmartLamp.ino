@@ -11,18 +11,40 @@
 #include <EEPROM.h>
 #include "SPIFFS.h"
 
-byte _ledTheme = 0;
-unsigned long receiveTime = -1;
+//#define HASRCSWITCH
 
 #define PIN 12
 
-//#define PIXELSPERSTAGE 1
-//#define STAGES 25
-#define PIXELSPERSTAGE 24
-#define STAGES 1
+#define ISSMARTLAMP
+//#define HASSPOTLIGHT
+
+#ifdef HASSPOTLIGHT
+  bool isSpotlightOn = true;
+#endif
+
+#ifdef HASRCSWITCH
+  #include <RCSwitch.h>
+  RCSwitch mySwitch = RCSwitch();
+#endif
+
+#ifdef ISSMARTLAMP
+  #define PIXELSPERSTAGE 24
+  #define STAGES 1
+#else
+  #define PIXELSPERSTAGE 36
+  #define STAGES 1
+#endif
 #define NUMPIXELS PIXELSPERSTAGE * STAGES
 
 //#define LOAD
+//#define HASPIR
+//#define RELAYPIN 4
+//#define RELAYPIN2 5
+//#define DOUBLERELAY
+//#define PIRPIN 6
+
+byte _ledTheme = 0;
+unsigned long receiveTime = -1;
 
 // Hier wird die Anzahl der angeschlossenen WS2812 LEDs bzw. NeoPixel angegeben
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
@@ -54,14 +76,19 @@ uint32_t pickedColor = pixels.Color(0, 0, 255);
 
 int counter = 0;
 
+#ifdef HASPIR
+unsigned long lastActivationTime;
+unsigned long activationDuration = 180000;
+#endif
+
 // Add your networks credentials here
-const char* ssid = "WLAN FS";
-const char* password = "8460856146271246";
+const char* ssid = "SID";
+const char* password = "Password";
 
 // Set web server port number to 80
 AsyncWebServer server(80);
 
-const char* ntpServer = "europe.pool.ntp.org";
+const char* ntpServer = "de.pool.ntp.org";
 const long  gmtOffset_sec = 3600;
 const int   daylightOffset_sec = 3600;
 
