@@ -223,6 +223,10 @@ void setup()
     request->send(SPIFFS, "/SmartLamp.js", "text/javascript");
   });
 
+  server.on("/SmartLamp.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/SmartLamp.css", "text/css");
+  });
+
   server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/favicon.ico", "image/ico");
   });

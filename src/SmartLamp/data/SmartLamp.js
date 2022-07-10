@@ -1,6 +1,8 @@
 var myOldActuals = 0;
 
 function onload() {
+  switchLanguage();
+  
   getTimeCall(makeTheCall, 1000);
   makeTheCall();
 }
@@ -156,4 +158,22 @@ function getTimeCall() {
     document.getElementById('duskCheck').checked = Boolean(myActuals.do_dusk);
     document.getElementById('colorpicker').value = "#" + parseInt(myActuals.color).toString(16).padStart(6, '0');
   })
+}
+
+function switchLanguage() {
+  //Das Javascript so einfach wie Möglich
+  var language = window.navigator.userLanguage || window.navigator.language;
+  // Browser-Sprache auslesen
+  if(language.indexOf('de') !== -1) {
+    testsprache = 'de';
+  } else {
+    testsprache = 'en';
+  }
+  // Browser-Sprache an den Body anhängen
+  $('body').attr( "id",'lang-'+testsprache);
+  // Sprache wechseln (hier mit jquery auf bestimmte Links)
+  $(".languageswitcher").on('click',function(e){
+    e.preventDefault();
+  $("body").attr( "id",'lang-'+$(this).attr('lang'));
+  });
 }
