@@ -1,3 +1,5 @@
+//#define DEBUG
+
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
@@ -11,20 +13,44 @@
 #include <EEPROM.h>
 #include "SPIFFS.h"
 
-//#define HASRCSWITCH
+#define ROOFLIGHT
+//#define ISSMARTLAMP
 
-#define PIN 12
+#ifdef ISSMARTLAMP
+  //#define LOADTHEME
+#endif
 
-#define ISSMARTLAMP
-//#define HASSPOTLIGHT
+#ifdef ROOFLIGHT
+  #define HASRCSWITCH
+  #define HASSPOTLIGHT
+
+  #define HASPIR
+  #define RELAYPIN 27
+  #define RELAYPIN2 14
+  #define DOUBLERELAY
+  #define PIRPIN 32
+#endif
+
+#define SIGNALPIN 12
 
 #ifdef HASSPOTLIGHT
   bool isSpotlightOn = true;
+  bool isLedOn = false;
+#else
+  bool isLedOn = true;
 #endif
 
 #ifdef HASRCSWITCH
   #include <RCSwitch.h>
+  #define RCReveivePin 26
   RCSwitch mySwitch = RCSwitch();
+  unsigned long onValueC  = 70737;
+  unsigned long offValueC = 70740;
+  unsigned long onValueD  = 70929;
+  unsigned long offValueD = 70932;
+  
+  unsigned long onValue = onValueD;
+  unsigned long offValue = offValueD;
 #endif
 
 #ifdef ISSMARTLAMP
@@ -36,18 +62,17 @@
 #endif
 #define NUMPIXELS PIXELSPERSTAGE * STAGES
 
-//#define LOAD
-//#define HASPIR
-//#define RELAYPIN 4
-//#define RELAYPIN2 5
-//#define DOUBLERELAY
-//#define PIRPIN 6
-
 byte _ledTheme = 0;
 unsigned long receiveTime = -1;
 
 // Hier wird die Anzahl der angeschlossenen WS2812 LEDs bzw. NeoPixel angegeben
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+#ifdef ROOFLIGHT
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, SIGNALPIN, NEO_BRG + NEO_KHZ800);
+#endif
+#ifdef ISSMARTLAMP
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, SIGNALPIN, NEO_GRB + NEO_KHZ800);
+#endif
+
 
 uint32_t off = pixels.Color(0, 0, 0);
 uint32_t red = pixels.Color(255, 0, 0);
@@ -104,50 +129,72 @@ int dusk_minute = 0;
 bool forward = true;
 int waveDelay = 100;
 
-bool isDynamicTheme[] = { false, true, false, true, false, false, false, true, true, true, true };
+bool isDynamicTheme[] = { false, true, false, false, false, true, false, true, true, true, true };
 bool isThemeActive = false;
 bool isSettingTheme = false;
-
+bool firstAfterSwitch = true;
 
 struct tm timeinfo;
 
+String _outputString = String("");
+
 TaskHandle_t Task1;
+TaskHandle_t Task2;
 
 void setup()
 {
+  pinMode(SIGNALPIN, OUTPUT);
+
+  #ifdef ROOFLIGHT
+  pinMode(RELAYPIN, OUTPUT);
+  if(!isLedOn)
+    digitalWrite(RELAYPIN , LOW);
+  else 
+    digitalWrite(RELAYPIN , HIGH);
+  #endif
+  
+  #ifdef DOUBLERELAY          
+    pinMode(RELAYPIN2, OUTPUT);
+    #ifdef HASSPOTLIGHT
+      if(isSpotlightOn)
+        digitalWrite(RELAYPIN2 , LOW);
+    #endif   
+  #endif
+  
+  #ifdef DEBUG
   Serial.begin(115200);
   Serial.print("setup() running on core ");
   Serial.println(xPortGetCoreID());
+  #endif
 
   pixels.begin(); // This initializes the NeoPixel library.
 
   if (!EEPROM.begin(512)) // size in Byte
   {
+    #ifdef DEBUG
     Serial.println("failed to initialise EEPROM");
+    #endif
   }
   loadState();
 
   if (!SPIFFS.begin(true)) {
+    #ifdef DEBUG
     Serial.println("An Error has occurred while mounting SPIFFS");
+    #endif
   }
 
-  xTaskCreatePinnedToCore(
-    Task1code, /* Function to implement the task */
-    "Task1", /* Name of the task */
-    10000,  /* Stack size in words */
-    NULL,  /* Task input parameter */
-    0,  /* Priority of the task */
-    &Task1,  /* Task handle. */
-    0); /* Core where the task should run */
-
   // Connect to Wi-Fi network with SSID and password
+  #ifdef DEBUG
   Serial.print("Connecting to ");
   Serial.println(ssid);
-
+  #endif
+  
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    #ifdef DEBUG
     Serial.println("Connection Failed! Rebooting...");
+    #endif
     delay(5000);
     ESP.restart();
   }
@@ -156,7 +203,11 @@ void setup()
   // ArduinoOTA.setPort(3232);
 
   // Hostname defaults to esp3232-[MAC]
+#ifdef ISSMARTLAMP
   ArduinoOTA.setHostname("SmartLamp");
+#else
+  ArduinoOTA.setHostname("SmartRoofLamp");
+#endif
 
   // No authentication by default
   // ArduinoOTA.setPassword("admin");
@@ -175,21 +226,29 @@ void setup()
 
       // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
       SPIFFS.end();
+      #ifdef DEBUG
       Serial.println("Start updating " + type);
+      #endif
     })
     .onEnd([]() {
+      #ifdef DEBUG
       Serial.println("\nEnd");
+      #endif
     })
     .onProgress([](unsigned int progress, unsigned int total) {
+      #ifdef DEBUG
       Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+      #endif
     })
     .onError([](ota_error_t error) {
+      #ifdef DEBUG
       Serial.printf("Error[%u]: ", error);
       if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
       else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
       else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
       else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
       else if (error == OTA_END_ERROR) Serial.println("End Failed");
+      #endif
     });
 
   ArduinoOTA.begin();
@@ -198,10 +257,12 @@ void setup()
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
   // Print local IP address and start web server
+  #ifdef DEBUG
   Serial.println("");
   Serial.println("WiFi connected.");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
+  #endif
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/SmartLamp.html", "text/html");
@@ -218,6 +279,16 @@ void setup()
   server.on("/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/bootstrap.bundle.min.js", "text/javascript");
   });
+
+/*
+  server.on("/material.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/material.min.css", "text/css");
+  });
+
+  server.on("/material.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/material.min.js", "text/javascript");
+  });
+*/
 
   server.on("/SmartLamp.js", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/SmartLamp.js", "text/javascript");
@@ -236,11 +307,155 @@ void setup()
   }, NULL, handle_rest);
 
   server.on("/read", HTTP_GET, handle_read);
+
+  server.on("/debug", HTTP_GET, handle_debug);
     
   server.onNotFound(handle_NotFound);
 
   server.begin();
+
+  #ifdef HASPIR
+  pinMode(PIRPIN, INPUT);
+  #endif
+
+  #ifdef HASRCSWITCH
+    pinMode(RCReveivePin, INPUT);
+    mySwitch.enableReceive(digitalPinToInterrupt(RCReveivePin));  // Receiver on interrupt 0 => that is pin #2
+  #endif
+
+  xTaskCreatePinnedToCore(
+    Task1code, /* Function to implement the task */
+    "Task1", /* Name of the task */
+    10000,  /* Stack size in words */
+    NULL,  /* Task input parameter */
+    5,  /* Priority of the task */
+    &Task1,  /* Task handle. */
+    0); /* Core where the task should run */
+
+
+  xTaskCreatePinnedToCore(
+    Task2code, /* Function to implement the task */
+    "Task2", /* Name of the task */
+    10000,  /* Stack size in words */
+    NULL,  /* Task input parameter */
+    1,  /* Priority of the task */
+    &Task2,  /* Task handle. */
+    1); /* Core where the task should run */      
+
 }
+
+void loop()
+{
+}
+
+void Task2code( void * pvParameters)
+{
+  for(;;)
+  {
+    int wifi_retry = 0;
+    while(WiFi.status() != WL_CONNECTED && wifi_retry < 5) {
+      wifi_retry++;
+      delay(100);
+      #ifdef DEBUG
+      Serial.println("WiFi not connected. Try to reconnect.");
+      #endif
+      WiFi.disconnect();
+      WiFi.mode(WIFI_OFF);
+      WiFi.mode(WIFI_STA);
+      WiFi.begin(ssid, password);
+    }
+    if(WiFi.status() != WL_CONNECTED && wifi_retry >= 5) {
+      #ifdef DEBUG
+      Serial.println("Reboot");
+      #endif
+      ESP.restart();
+    }
+    
+    ArduinoOTA.handle();
+  
+    #ifdef HASRCSWITCH
+    if (mySwitch.available()) {
+      
+      unsigned long receiveTimeAct = millis();
+      if (receiveTime < 0 || receiveTimeAct - receiveTime > 500) {
+  
+        byte ledTheme = _ledTheme;
+        receiveTime = receiveTimeAct;
+        
+        if (mySwitch.getReceivedValue() == onValue)
+        {
+          ledTheme++;
+  
+          if (ledTheme == 7) {
+            ledTheme = 9;
+          }
+          if (ledTheme > 10) {
+            ledTheme = 1;
+          }
+          setLedTheme(ledTheme);
+  
+          #ifdef DEBUG
+          Serial.print("LED Theme = ");
+          Serial.println(ledTheme);              
+          #endif
+        } 
+        else if (mySwitch.getReceivedValue() == offValue) 
+        {      
+          ledTheme = 0;
+          setLedTheme(ledTheme);
+  
+          #ifdef DEBUG
+          Serial.println("LED aus");
+          #endif
+        } 
+  
+        saveState();
+      }
+  
+      mySwitch.resetAvailable();
+    }  
+    #endif
+  }
+}
+
+int timeCounter = 0;
+
+void Task1code( void * parameter) { 
+  for (;;) {
+
+    #ifdef HASPIR
+    bool detected = digitalRead(PIRPIN);
+    if(detected) {
+      if(millis() - lastActivationTime > 1000){
+        Serial.println("PIR");
+        _outputString = String("PIR");
+      }    
+    
+      lastActivationTime = millis();
+    }
+    #endif
+    
+    setLed(_ledTheme);
+    delay(100);
+
+    if (timeCounter > 10)
+    {
+      timeCounter = 0;
+      struct tm timeinfo_tmp;
+      if (!getLocalTime(&timeinfo_tmp)) {
+        #ifdef DEBUG
+        Serial.println("Failed to obtain time");
+        #endif
+        return;
+      }
+      else {
+        timeinfo = timeinfo_tmp;
+      }
+    }
+    timeCounter++;
+  }
+}
+
 
 StaticJsonDocument<160> getJsonData() {
   StaticJsonDocument<160> getObject;
@@ -257,16 +472,20 @@ StaticJsonDocument<160> getJsonData() {
 }
 
 void handle_rest(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+  #ifdef DEBUG
   Serial.print(F("REST HTTP Method: "));
   Serial.println(request->method());
-
+  #endif
+  
   DynamicJsonDocument doc(512);
   DeserializationError  error = deserializeJson(doc, (const char*)data);    
   if (error) {
     // if the file didn't open, print an error:
+    #ifdef DEBUG
     Serial.print(F("Error parsing JSON "));
     Serial.println(error.c_str());
-
+    #endif
+    
     String msg = error.c_str();
 
     request->send(400, F("text/html"),
@@ -279,49 +498,65 @@ void handle_rest(AsyncWebServerRequest *request, uint8_t *data, size_t len, size
     if (request->method() == HTTP_POST) {
       Serial.println("got POST");
       if (postObj.containsKey("hour_dawn")) {
+        #ifdef DEBUG
         Serial.print("set hour dawn to ");
         Serial.println((int)postObj["hour_dawn"]);
+        #endif
         dawn_hour = (int)postObj["hour_dawn"];
       }
       if (postObj.containsKey("minute_dawn")) {
+        #ifdef DEBUG
         Serial.print("set minute dawn to ");
         Serial.println((int)postObj["minute_dawn"]);
+        #endif
         dawn_minute = (int)postObj["minute_dawn"];
       }
       if (postObj.containsKey("hour_dusk")) {
+        #ifdef DEBUG
         Serial.print("set hour dusk to ");
         Serial.println((int)postObj["hour_dusk"]);
+        #endif
         dusk_hour = (int)postObj["hour_dusk"];
       }
       if (postObj.containsKey("minute_dusk")) {
+        #ifdef DEBUG
         Serial.print("set minute dusk to ");
         Serial.println((int)postObj["minute_dusk"]);
+        #endif
         dusk_minute = (int)postObj["minute_dusk"];
       }
       
       if (postObj.containsKey("theme")) {
-        Serial.print("set minute to ");
+        #ifdef DEBUG
+        Serial.print("set theme to ");
         Serial.println((int)postObj["theme"]);
+        #endif
         if(_ledTheme != (int)postObj["theme"]) {
           setLedTheme((int)postObj["theme"]);
         }
       }
 
       if (postObj.containsKey("color")) {
+        #ifdef DEBUG
         Serial.print("set picked color ");
         Serial.println((uint32_t)postObj["color"], HEX);
+        #endif
         isThemeActive = false;
         pickedColor = (uint32_t)postObj["color"];
       }
 
       if (postObj.containsKey("do_dawn")) {
+        #ifdef DEBUG
         Serial.print("set do dawn ");
         Serial.println((bool)postObj["do_dawn"]);
+        #endif
         doDawn = (bool)postObj["do_dawn"];
       }
       if (postObj.containsKey("do_dusk")) {
+        #ifdef DEBUG
         Serial.print("set do dusk ");
         Serial.println((bool)postObj["do_dusk"]);
+        #endif
         doDusk = (bool)postObj["do_dusk"];
       }
 
@@ -353,53 +588,14 @@ void handle_read(AsyncWebServerRequest *request) {
   request->send(200, "text/json", buffer);
 }
 
+void handle_debug(AsyncWebServerRequest *request) {
+  String outputString = _outputString;
+  _outputString = String("");
+  request->send(200, "text/plain", String(outputString));
+}
+
 void handle_NotFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
-}
-
-void loop()
-{
-  int wifi_retry = 0;
-  while(WiFi.status() != WL_CONNECTED && wifi_retry < 5) {
-    wifi_retry++;
-    delay(100);
-    Serial.println("WiFi not connected. Try to reconnect.");
-    WiFi.disconnect();
-    WiFi.mode(WIFI_OFF);
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, password);
-  }
-  if(WiFi.status() != WL_CONNECTED && wifi_retry >= 5) {
-    Serial.println("Reboot");
-    ESP.restart();
-  }
-  
-  ArduinoOTA.handle();
-  
-  return;
-}
-
-int timeCounter = 0;
-
-void Task1code( void * parameter) {
-  for (;;) {
-    setLed(_ledTheme);
-    delay(100);
-
-    if (timeCounter > 10)
-    {
-      timeCounter = 0;
-      struct tm timeinfo_tmp;
-      if (!getLocalTime(&timeinfo_tmp)) {
-        Serial.println("Failed to obtain time");
-        return;
-      }
-      else {
-        timeinfo = timeinfo_tmp;
-      }
-    }
-    timeCounter++;
-  }
 }
 
 int _ledThemeLast = 0;
@@ -428,11 +624,18 @@ void setLed(byte ledTheme) {
     dawnSecondsGone = ((hour - dawn_hour) * 60 + (minute - dawn_minute)) * 60 + second;
     if (dawnSecondsGone > 0 && dawnSecondsGone < light_interval_s)
       if (ledTheme != 7)
-      {
+      {      
+        #ifdef HASPIR     
+        if(_ledTheme != 5) {
+          _ledTheme = 5;
+          saveState();
+        }
+        #else
         if(_ledTheme != 0) {
           _ledTheme = 0;
           saveState();
         }
+        #endif
         ledTheme = 7;
       }
   }
@@ -442,10 +645,17 @@ void setLed(byte ledTheme) {
     if (duskSecondsGone > 0 && duskSecondsGone < light_interval_s)
       if (ledTheme != 8)
       {
+        #ifdef HASPIR     
+        if(_ledTheme != 5) {
+          _ledTheme = 5;
+          saveState();
+        }
+        #else
         if(_ledTheme != 0) {
           _ledTheme = 0;
           saveState();
         }
+        #endif
         ledTheme = 8;
       }
   }
@@ -455,53 +665,56 @@ void setLed(byte ledTheme) {
     isThemeActive = false;
   }
 
-  if(isThemeActive && !isDynamicTheme[ledTheme])
+  if(isThemeActive && !isDynamicTheme[ledTheme] && !firstAfterSwitch)
     return;
-  
+
+  isLedOn = true;
+
   //LED-Theme setzen
-  if (ledTheme == 0) {
+  #ifdef DOUBLERELAY
+  isSpotlightOn = false;
+  #endif
+
+  if (ledTheme == 0 || _ledThemeLast == 0)
+  {
     pixels.fill(off, 0, NUMPIXELS);
   }
+  if (ledTheme == 0) 
+  {
+    isLedOn = false;
+    #ifdef DOUBLERELAY
+    isSpotlightOn = true;
+    #endif
+  }
   if (ledTheme == 1) {
-    if (!isThemeActive) {
-      pixels.fill(off, 0, NUMPIXELS);
-    }
-    for (int i = 0; i < NUMPIXELS; i++)
-    {
-      AddColor(i, fireColor);
-      int r = random(80);
-      uint32_t diff_color = pixels.Color ( r, r / 2, r / 2);
-      SubstractColor(i, diff_color);
-    }
-
-    delay(random(50, 150));
+    Fire();
   }
   else if (ledTheme == 2) {
     pixels.fill(yellow2, 0, NUMPIXELS);
+    #ifdef DOUBLERELAY
+    isSpotlightOn = true;
+    #endif    
   }
   else if (ledTheme == 3) {
-    counter++;
-    counter = counter % 256;
-
-    float offset = 256.0 / STAGES;
-    uint32_t rb[STAGES];
-
-    for (int i = 0; i < STAGES; i++)
-    {
-      rb[i] = Wheel((int)(counter + i * offset) % 256);
-    }
-
-    int j = 0;
-    for (int i = STAGES - 1; i >= 0; i--)
-    {
-      pixels.fill(rb[i], j++ * PIXELSPERSTAGE, PIXELSPERSTAGE);
-    }
+    pixels.fill(yellow2, 0, NUMPIXELS);
   }
   else if (ledTheme == 4) {
     pixels.fill(warmWhite, 0, NUMPIXELS);
   }
   else if (ledTheme == 5) {
+    #ifdef HASPIR
+    _outputString = String("Millis since last activation: ") + String(millis() - lastActivationTime);
+    if(millis() - lastActivationTime < activationDuration) {      
+      pixels.fill(warmWhiteDark, 0, NUMPIXELS);
+      isLedOn = true;
+    }
+    else {
+      pixels.fill(off, 0, NUMPIXELS);
+      isLedOn = false;
+    }
+    #else
     pixels.fill(warmWhiteDark, 0, NUMPIXELS);
+    #endif
   }
   else if (ledTheme == 6) {
     pixels.fill(pickedColor, 0, NUMPIXELS);
@@ -521,6 +734,13 @@ void setLed(byte ledTheme) {
     else
     {
       pixels.fill(off, 0, NUMPIXELS);
+
+      #ifdef HASPIR     
+      if(_ledTheme != 5) {
+        _ledTheme = 5;
+        saveState();
+      }
+      #endif
     }
   }
   else if (ledTheme == 8) {
@@ -539,47 +759,127 @@ void setLed(byte ledTheme) {
     else
     {
       pixels.fill(off, 0, NUMPIXELS);
+      #ifdef HASPIR     
+      if(_ledTheme != 5) {
+        _ledTheme = 5;
+        saveState();
+      }
+      #endif
     }
   }
   else if (ledTheme == 9) {
-    if (!isThemeActive) {
-      waveColorAct = waveColorDark;
-      pixels.fill(waveColorAct, 0, NUMPIXELS);
-
-      waveDelay = random(10, 300);
-    }
-
-    uint8_t r, g, b; 
-    r = (uint8_t)(waveColorAct >> 16),
-    g = (uint8_t)(waveColorAct >>  8),
-    b = (uint8_t)(waveColorAct >>  0);
-
-    if(forward)
-    {
-      r++;
-      g++;
-
-      if(r >= 20) {
-        forward = false;
-        waveDelay = random(10, 300);
-      }
-    }
-    else{
-      r--;
-      g--;      
-
-      if(r <= 0) {
-        forward = true;
-        waveDelay = random(10, 300);
-      }
-    }
-    waveColorAct = pixels.Color ( r, g, b);
-    
-    pixels.fill(waveColorAct, 0, NUMPIXELS);
-    
-    delay(waveDelay);
+    Wave();
   }
   else if (ledTheme == 10) {
+    Rainbow();
+  }
+
+  firstAfterSwitch = false;
+  #ifdef ROOFLIGHT
+  //Relais entsprechend isLedOn schalten
+  if (isLedOn) {
+    digitalWrite(RELAYPIN , LOW);
+    if(!isThemeActive)
+      firstAfterSwitch = true;
+  }
+  else {
+    digitalWrite(RELAYPIN, HIGH);    
+  }    
+  #endif
+  pixels.show();
+  
+
+  #ifdef DOUBLERELAY          
+  if (isSpotlightOn) {
+    digitalWrite(RELAYPIN2 , LOW);
+  }
+  else {
+    digitalWrite(RELAYPIN2, HIGH);    
+  }
+  #endif
+  
+  isThemeActive = true;
+  isSettingTheme = false;
+}
+
+void Fire()
+{
+  if (!isThemeActive) {
+      pixels.fill(off, 0, NUMPIXELS);
+  }
+  for (int i = 0; i < NUMPIXELS; i++)
+  {
+    AddColor(i, fireColor);
+    int r = random(80);
+    uint32_t diff_color = pixels.Color ( r, r / 2, r / 2);
+    SubstractColor(i, diff_color);
+  }
+
+  delay(random(50, 150));
+}
+
+void Rainbow()
+{
+  counter++;
+  counter = counter % 256;
+
+  float offset = 256.0 / STAGES;
+  uint32_t rb[STAGES];
+
+  for (int i = 0; i < STAGES; i++)
+  {
+    rb[i] = Wheel((int)(counter + i * offset) % 256);
+  }
+
+  int j = 0;
+  for (int i = STAGES - 1; i >= 0; i--)
+  {
+    pixels.fill(rb[i], j++ * PIXELSPERSTAGE, PIXELSPERSTAGE);
+  }
+}
+
+void Wave()
+{
+  if (!isThemeActive) {
+    waveColorAct = waveColorDark;
+    pixels.fill(waveColorAct, 0, NUMPIXELS);
+
+    waveDelay = random(10, 300);
+  }
+
+  uint8_t r, g, b; 
+  r = (uint8_t)(waveColorAct >> 16),
+  g = (uint8_t)(waveColorAct >>  8),
+  b = (uint8_t)(waveColorAct >>  0);
+
+  if(forward)
+  {
+    r++;
+    g++;
+
+    if(r >= 20) {
+      forward = false;
+      waveDelay = random(10, 300);
+    }
+  }
+  else{
+    r--;
+    g--;      
+
+    if(r <= 0) {
+      forward = true;
+      waveDelay = random(10, 300);
+    }
+  }
+  waveColorAct = pixels.Color (r, g, b);
+  
+  pixels.fill(waveColorAct, 0, NUMPIXELS);
+  
+  delay(waveDelay);
+}
+
+void Alert()
+{
     pixels.fill(off, 0, NUMPIXELS);
 
     int delayFactor = 4;
@@ -603,13 +903,7 @@ void setLed(byte ledTheme) {
 
     counter++;
     counter = counter % (2 * delayFactor);
-  }
-  pixels.show();
-
-  isThemeActive = true;
-  isSettingTheme = false;
 }
-
 
 ///
 /// Set color of LED
@@ -699,7 +993,11 @@ uint32_t Wheel(byte WheelPos)
 }
 
 void saveState() {
-  Serial.println("Save state");  
+  return;
+  #ifdef DEBUG
+  Serial.println("Save state");
+  _outputString = String("Save state");
+  #endif
   uint8_t r;
   uint8_t g;
   uint8_t b;
@@ -716,15 +1014,25 @@ void saveState() {
   EEPROM.write(6, (byte)dawn_hour);
   EEPROM.write(7, (byte)dawn_minute);
   EEPROM.write(8, (byte)dusk_hour);
-  EEPROM.write(9, (byte)dusk_minute);  
+  EEPROM.write(9, (byte)dusk_minute);
   EEPROM.commit();
-  Serial.println("Save state done");  
+  #ifdef DEBUG
+  Serial.println("Save state done");
+  _outputString = String("Save state done");
+  #endif
 }
 
 
 void loadState() {
+  #ifdef DEBUG
   Serial.println("Load state");  
+  _outputString = String("Load state");
+  #endif
+  #ifdef LOADTHEME
   setLedTheme(EEPROM.read(0));
+  #else
+  setLedTheme(0);
+  #endif
   uint8_t r = EEPROM.read(1);
   uint8_t g = EEPROM.read(2);
   uint8_t b = EEPROM.read(3);
@@ -734,10 +1042,13 @@ void loadState() {
   dawn_minute = EEPROM.read(7);
   dusk_hour = EEPROM.read(8);
   dusk_minute = EEPROM.read(9);
-
   pickedColor = pixels.Color(r, g, b);
-  Serial.println("Load state done");  
+  #ifdef DEBUG
+  Serial.println("Load state done");
+  _outputString = String("Load state done");
+  #endif
 
+  #ifdef DEBUG
   StaticJsonDocument<160> getObject;
   getObject["hour_dawn"] = dawn_hour;
   getObject["minute_dawn"] = dawn_minute;
@@ -750,4 +1061,6 @@ void loadState() {
   char buffer[160];
   serializeJson(getObject, buffer);
   Serial.println(buffer);
+  _outputString = String(buffer);
+  #endif
 }

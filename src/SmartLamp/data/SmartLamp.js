@@ -5,13 +5,17 @@ function onload() {
   
   getTimeCall(makeTheCall, 1000);
   makeTheCall();
+  debugCall();
 }
 
 function valueChanged(iD) {
   switch (iD) {
     case 'NEXT':
       var newValue = myOldActuals.theme + 1;
-      if (newValue > 6) {
+      if (newValue == 7) {
+        newValue = 9;
+      }
+      if (newValue > 10) {
         newValue = 0;
       }
       if (!isNaN(newValue))
@@ -21,8 +25,11 @@ function valueChanged(iD) {
       break;
     case 'PREV':
       var newValue = myOldActuals.theme - 1;
-      if (newValue < 0) {
+      if (newValue == 8) {
         newValue = 6;
+      }
+      if (newValue < 0) {
+        newValue = 10;
       }
       if (!isNaN(newValue))
         setTimeValues({
@@ -116,22 +123,43 @@ function makeTheCall() {
     },
   });
   def.done(function (data) {
-    if (data === "") {
-      return
-    };
-    //console.log(data);
-    var myActuals = data;
+    if (data != "") {
+      //console.log(data);
+      var myActuals = data;
 
-    if (myActuals.theme != myOldActuals.theme) {
-      document.getElementById('_ledTheme').innerHTML = "LED Thema " + parseInt(myActuals.theme);
-      _ledTheme = myActuals.theme;
-    }
-    myOldActuals = myActuals;
+      if (myActuals.theme != myOldActuals.theme) {
+        document.getElementById('_ledTheme').innerHTML = "LED Thema " + parseInt(myActuals.theme);
+        _ledTheme = myActuals.theme;
+      }
+      myOldActuals = myActuals;
+    };
 
     setTimeout(makeTheCall, 200);
   })
 }
 
+function debugCall() {
+  $.ajaxSetup({
+    async: true,
+    cache: false
+  });
+  var def = $.ajax({
+    method: "GET",
+    url: 'debug',
+    headers: {
+      'accept': 'text/plain',
+      'Cache-Control': 'no-store'
+    },
+  });
+  def.done(function (data) {
+    if (data != "") {
+      console.log(data);
+      document.getElementById('DEBUG').innerHTML = data;
+    };
+
+    setTimeout(debugCall, 200);
+  })
+}
 
 function getTimeCall() {
   $.ajaxSetup({

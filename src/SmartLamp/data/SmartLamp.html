@@ -1,12 +1,12 @@
 <!DOCTYPE html><html>
     <head>
 
-    <script language="JavaScript" type="text/javascript" src="/SmartLamp.js"></script>
+    <script language="JavaScript" type="text/javascript" src="./SmartLamp.js"></script>
 
-    <script language="JavaScript" type="text/javascript" src="/jquery-3.5.1.min.js"></script>
-    <script src="/bootstrap.bundle.min.js"></script> 
-    <link rel="stylesheet" href="/bootstrap.min.css" media="screen">
-    <link rel="stylesheet" href="/SmartLamp.css">
+    <script language="JavaScript" type="text/javascript" src="./jquery-3.5.1.min.js"></script>
+    <script src="./bootstrap.bundle.min.js"></script> 
+    <link rel="stylesheet" href="./bootstrap.min.css" media="screen">
+    <link rel="stylesheet" href="./SmartLamp.css">
 
     <!--
     <script language="JavaScript" type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -29,7 +29,7 @@
      </h1>
      <div class="container">
      <p>
-      <label class=myLabel id="_ledTheme" style="margin-left:1px;width:70px;">
+      <label class=myLabel id="_ledTheme" style="margin-left:1px;width:120px;">
         <Span class="lang de">LED Thema</Span>
         <Span class="lang en">LED Theme</Span>
       </label>   
@@ -48,36 +48,36 @@
      <p></p>
      <div class="row">   
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="0" onclick="valueChanged(this.id)">
-        <Span class="lang de">Aus</Span>
-        <Span class="lang en">Off</Span>
+        <Span class="lang de">Strahler</Span>
+        <Span class="lang en">Spot</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="1" onclick="valueChanged(this.id)">
         <Span class="lang de">Feuer</Span>
         <Span class="lang en">Fire</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="2" onclick="valueChanged(this.id)">
-        <Span class="lang de">Gelb</Span>
-        <Span class="lang en">Yellow</Span>
+        <Span class="lang de">Gelb + Strahler</Span>
+        <Span class="lang en">Yellow + Spot</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="3" onclick="valueChanged(this.id)">
-        <Span class="lang de">Regenbogen</Span>
-        <Span class="lang en">Rainbow</Span>
+        <Span class="lang de">Gelb</Span>
+        <Span class="lang en">Yellow</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="4" onclick="valueChanged(this.id)">
         <Span class="lang de">Hell</Span>
         <Span class="lang en">Bright</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="5" onclick="valueChanged(this.id)">
-        <Span class="lang de">Dunkel</Span>
-        <Span class="lang en">Dark</Span>
+        <Span class="lang de">Nachtlicht</Span>
+        <Span class="lang en">Night Light</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="9" onclick="valueChanged(this.id)">
         <Span class="lang de">Welle</Span>
         <Span class="lang en">Wave</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="10" onclick="valueChanged(this.id)">
-        <Span class="lang de">Alarm</Span>
-        <Span class="lang en">Alert</Span>
+        <Span class="lang de">Regenbogen</Span>
+        <Span class="lang en">Rainbow</Span>
        </button></div>
       </div>
      
@@ -114,5 +114,10 @@
      <div class="row">
       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" onclick="onClickOk()"><span class="lang de">Übernehmen</span><span class="lang en">Apply</span></button></div>
     </div>
+    <p>
+      <div class="label" id="DEBUG">
+        <span></span>
+      </div>
+    <p>
     </div>
     </body></html>
