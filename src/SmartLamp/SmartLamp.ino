@@ -1,11 +1,11 @@
-//#define DEBUG
+#define DEBUG
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 
 #include "ESPAsyncWebServer.h"
-#include <Adafruit_NeoPixel.h>
+#include <FastLED.h>
 #include "time.h"
 #include "AsyncJson.h"
 #include <ArduinoJson.h>
@@ -66,38 +66,39 @@ byte _ledTheme = 0;
 unsigned long receiveTime = -1;
 
 // Hier wird die Anzahl der angeschlossenen WS2812 LEDs bzw. NeoPixel angegeben
+CRGBArray<NUMPIXELS> _leds;
 #ifdef ROOFLIGHT
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, SIGNALPIN, NEO_BRG + NEO_KHZ800);
+//Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, SIGNALPIN, NEO_BRG + NEO_KHZ800);
 #endif
 #ifdef ISSMARTLAMP
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, SIGNALPIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, SIGNALPIN, NEO_GRB + NEO_KHZ800);
 #endif
 
 
-uint32_t off = pixels.Color(0, 0, 0);
-uint32_t red = pixels.Color(255, 0, 0);
-uint32_t magenta = pixels.Color(255, 0, 255);
-uint32_t blue = pixels.Color(0, 0, 255);
-uint32_t blueishwhite = pixels.Color(40, 40, 200);
-uint32_t greenishwhite = pixels.Color(40, 200, 40);
-uint32_t white = pixels.Color(255, 255, 255);
-uint32_t turkis = pixels.Color(0, 255, 255);
-uint32_t yellow = pixels.Color(255, 255, 0);
-uint32_t yellow2 = pixels.Color(255, 150, 0);
-uint32_t orange = pixels.Color(171, 54, 0);
-uint32_t asWarmWhite = pixels.Color(243, 231, 211);
+CRGB off = CRGB::Black;
+CRGB red = CRGB(255, 0, 0);
+CRGB magenta = CRGB(255, 0, 255);
+CRGB blue = CRGB(0, 0, 255);
+CRGB blueishwhite = CRGB(40, 40, 200);
+CRGB greenishwhite = CRGB(40, 200, 40);
+CRGB white = CRGB(255, 255, 255);
+CRGB turkis = CRGB(0, 255, 255);
+CRGB yellow = CRGB(255, 255, 0);
+CRGB yellow2 = CRGB(255, 150, 0);
+CRGB orange = CRGB(171, 54, 0);
+CRGB asWarmWhite = CRGB(243, 231, 211);
 
-uint32_t warmWhite = pixels.Color(123, 124, 52);
+CRGB warmWhite = CRGB(123, 124, 52);
 
 float dim = 0.2;
-uint32_t warmWhiteDark = pixels.Color(123 * dim, 124 * dim, 52 * dim);
+CRGB warmWhiteDark = CRGB(123 * dim, 124 * dim, 52 * dim);
 
-uint32_t fireColor = pixels.Color ( 80,  18,  0);
+CRGB fireColor = CRGB(80,  18,  0);
 
-uint32_t waveColorDark = pixels.Color ( 0,  20,  117);
-uint32_t waveColorAct = pixels.Color ( 0,  20,  117);
+CRGB waveColorDark = CRGB(0,  20,  117);
+CRGB waveColorAct = CRGB(0,  20,  117);
 
-uint32_t pickedColor = pixels.Color(0, 0, 255);
+CRGB pickedColor = CRGB(0, 0, 255);
 
 int counter = 0;
 
@@ -107,8 +108,8 @@ unsigned long activationDuration = 180000;
 #endif
 
 // Add your networks credentials here
-const char* ssid = "SID";
-const char* password = "Password";
+const char* ssid = "WLAN FS";
+const char* password = "8460856146271246";
 
 // Set web server port number to 80
 AsyncWebServer server(80);
@@ -141,6 +142,13 @@ String _outputString = String("");
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 
+// https://randomnerdtutorials.com/esp32-ntp-timezones-daylight-saving/
+void setTimezone(String timezone){
+  Serial.printf("  Setting Timezone to %s\n",timezone.c_str());
+  setenv("TZ",timezone.c_str(),1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
+  tzset();
+}
+
 void setup()
 {
   pinMode(SIGNALPIN, OUTPUT);
@@ -160,14 +168,20 @@ void setup()
         digitalWrite(RELAYPIN2 , LOW);
     #endif   
   #endif
+
+  #ifdef ROOFLIGHT
+  FastLED.addLeds<WS2811, SIGNALPIN, BRG>(_leds, NUMPIXELS);
+  #endif
+  #ifdef ISSMARTLAMP
+  FastLED.addLeds<WS2811, SIGNALPIN, GRB>(_leds, NUMPIXELS);
+  #endif
+
   
   #ifdef DEBUG
   Serial.begin(115200);
   Serial.print("setup() running on core ");
   Serial.println(xPortGetCoreID());
   #endif
-
-  pixels.begin(); // This initializes the NeoPixel library.
 
   if (!EEPROM.begin(512)) // size in Byte
   {
@@ -254,7 +268,9 @@ void setup()
   ArduinoOTA.begin();
 
   //init and get the time
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  //configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  configTime(0, 0, ntpServer);
+  setTimezone("CET-1CEST,M3.5.0,M10.5.0/3"); //Timezone Berlin
 
   // Print local IP address and start web server
   #ifdef DEBUG
@@ -444,12 +460,15 @@ void Task1code( void * parameter) {
       struct tm timeinfo_tmp;
       if (!getLocalTime(&timeinfo_tmp)) {
         #ifdef DEBUG
-        Serial.println("Failed to obtain time");
+        Serial.println("Failed to obtain time");        
         #endif
         return;
       }
       else {
         timeinfo = timeinfo_tmp;
+        char str[40];
+        strftime(str, sizeof str, "%A, %B %d %Y %H:%M:%S zone %Z %z", &timeinfo); 
+        _outputString = String(str);
       }
     }
     timeCounter++;
@@ -464,7 +483,10 @@ StaticJsonDocument<160> getJsonData() {
   getObject["hour_dusk"] = dusk_hour;
   getObject["minute_dusk"] = dusk_minute;
   getObject["theme"] = _ledTheme;
-  getObject["color"] = pickedColor;
+  getObject["color"] = uint32_t(0x00000000) |
+               (uint32_t(pickedColor.r) << 16) |
+               (uint32_t(pickedColor.g) << 8) |
+               uint32_t(pickedColor.b);
   getObject["do_dawn"] = doDawn;
   getObject["do_dusk"] = doDusk;
 
@@ -677,7 +699,7 @@ void setLed(byte ledTheme) {
 
   if (ledTheme == 0 || _ledThemeLast == 0)
   {
-    pixels.fill(off, 0, NUMPIXELS);
+    fill_solid(_leds, NUMPIXELS, off);
   }
   if (ledTheme == 0) 
   {
@@ -690,34 +712,34 @@ void setLed(byte ledTheme) {
     Fire();
   }
   else if (ledTheme == 2) {
-    pixels.fill(yellow2, 0, NUMPIXELS);
+    fill_solid(_leds, NUMPIXELS, yellow2);
     #ifdef DOUBLERELAY
     isSpotlightOn = true;
     #endif    
   }
   else if (ledTheme == 3) {
-    pixels.fill(yellow2, 0, NUMPIXELS);
+    fill_solid(_leds, NUMPIXELS, yellow2);
   }
   else if (ledTheme == 4) {
-    pixels.fill(warmWhite, 0, NUMPIXELS);
+    fill_solid(_leds, NUMPIXELS, warmWhite);
   }
   else if (ledTheme == 5) {
     #ifdef HASPIR
     _outputString = String("Millis since last activation: ") + String(millis() - lastActivationTime);
     if(millis() - lastActivationTime < activationDuration) {      
-      pixels.fill(warmWhiteDark, 0, NUMPIXELS);
+      fill_solid(_leds, NUMPIXELS, warmWhiteDark);
       isLedOn = true;
     }
     else {
-      pixels.fill(off, 0, NUMPIXELS);
+      fill_solid(_leds, NUMPIXELS, off);
       isLedOn = false;
     }
     #else
-    pixels.fill(warmWhiteDark, 0, NUMPIXELS);
+    fill_solid(_leds, NUMPIXELS, warmWhiteDark);
     #endif
   }
   else if (ledTheme == 6) {
-    pixels.fill(pickedColor, 0, NUMPIXELS);
+    fill_solid(_leds, NUMPIXELS, pickedColor);
   }
   else if (ledTheme == 7) {
     if (dawnSecondsGone > 0 && dawnSecondsGone < light_interval_s)
@@ -728,13 +750,13 @@ void setLed(byte ledTheme) {
         dim = 255;
       if (dim < 0)
         dim = 0;
-      uint32_t color = pixels.Color(dim, dim, dim);
-      pixels.fill(color, 0, NUMPIXELS);
+      CRGB color = CRGB(dim, dim, dim);
+      fill_solid(_leds, NUMPIXELS, color);
     }
     else
     {
-      pixels.fill(off, 0, NUMPIXELS);
-
+      fill_solid(_leds, NUMPIXELS, off);
+      
       #ifdef HASPIR     
       if(_ledTheme != 5) {
         _ledTheme = 5;
@@ -753,12 +775,12 @@ void setLed(byte ledTheme) {
       if (dim < 0)
         dim = 0;
 
-      uint32_t color = pixels.Color(dim, dim, dim / 4);
-      pixels.fill(color, 0, NUMPIXELS);
+      CRGB color = CRGB(dim, dim, dim / 4);
+      fill_solid(_leds, NUMPIXELS, color);
     }
     else
     {
-      pixels.fill(off, 0, NUMPIXELS);
+      fill_solid(_leds, NUMPIXELS, off);
       #ifdef HASPIR     
       if(_ledTheme != 5) {
         _ledTheme = 5;
@@ -786,8 +808,7 @@ void setLed(byte ledTheme) {
     digitalWrite(RELAYPIN, HIGH);    
   }    
   #endif
-  pixels.show();
-  
+  FastLED.show();
 
   #ifdef DOUBLERELAY          
   if (isSpotlightOn) {
@@ -804,14 +825,15 @@ void setLed(byte ledTheme) {
 
 void Fire()
 {
-  if (!isThemeActive) {
-      pixels.fill(off, 0, NUMPIXELS);
+  if (!isThemeActive) 
+  {
+      fill_solid(_leds, NUMPIXELS, off);
   }
   for (int i = 0; i < NUMPIXELS; i++)
   {
     AddColor(i, fireColor);
     int r = random(80);
-    uint32_t diff_color = pixels.Color ( r, r / 2, r / 2);
+    CRGB diff_color = CRGB(r, r / 2, r / 2);
     SubstractColor(i, diff_color);
   }
 
@@ -824,7 +846,7 @@ void Rainbow()
   counter = counter % 256;
 
   float offset = 256.0 / STAGES;
-  uint32_t rb[STAGES];
+  CRGB rb[STAGES];
 
   for (int i = 0; i < STAGES; i++)
   {
@@ -834,7 +856,11 @@ void Rainbow()
   int j = 0;
   for (int i = STAGES - 1; i >= 0; i--)
   {
-    pixels.fill(rb[i], j++ * PIXELSPERSTAGE, PIXELSPERSTAGE);
+    for(int j = 0; j < PIXELSPERSTAGE; j++)
+    {
+      _leds[i*PIXELSPERSTAGE + j] = rb[i];
+    }
+    //_leds(j++ * PIXELSPERSTAGE, PIXELSPERSTAGE).fill_solid(rb[i]);
   }
 }
 
@@ -842,15 +868,15 @@ void Wave()
 {
   if (!isThemeActive) {
     waveColorAct = waveColorDark;
-    pixels.fill(waveColorAct, 0, NUMPIXELS);
+    fill_solid(_leds, NUMPIXELS, waveColorAct);
 
     waveDelay = random(10, 300);
   }
 
   uint8_t r, g, b; 
-  r = (uint8_t)(waveColorAct >> 16),
-  g = (uint8_t)(waveColorAct >>  8),
-  b = (uint8_t)(waveColorAct >>  0);
+  r = (uint8_t)waveColorAct.r,
+  g = (uint8_t)waveColorAct.g,
+  b = (uint8_t)waveColorAct.b;
 
   if(forward)
   {
@@ -871,21 +897,21 @@ void Wave()
       waveDelay = random(10, 300);
     }
   }
-  waveColorAct = pixels.Color (r, g, b);
+  waveColorAct = CRGB(r, g, b);
   
-  pixels.fill(waveColorAct, 0, NUMPIXELS);
+  fill_solid(_leds, NUMPIXELS, waveColorAct);
   
   delay(waveDelay);
 }
 
 void Alert()
 {
-    pixels.fill(off, 0, NUMPIXELS);
+    fill_solid(_leds, NUMPIXELS, off);
 
     int delayFactor = 4;
 
-    uint32_t color1;
-    uint32_t color2;
+    CRGB color1;
+    CRGB color2;
 
     switch (counter / delayFactor)
     {
@@ -899,7 +925,7 @@ void Alert()
         break;
     }
 
-    pixels.fill(color1, 0, NUMPIXELS);
+    fill_solid(_leds, NUMPIXELS, color1);
 
     counter++;
     counter = counter % (2 * delayFactor);
@@ -908,92 +934,69 @@ void Alert()
 ///
 /// Set color of LED
 ///
-void AddColor(uint8_t position, uint32_t color)
+void AddColor(uint8_t position, CRGB color)
 {
-  uint32_t blended_color = Blend(pixels.getPixelColor(position), color);
-  pixels.setPixelColor(position, blended_color);
+  _leds[position] += color;
 }
 
 ///
 /// Set color of LED
 ///
-void SubstractColor(uint8_t position, uint32_t color)
+void SubstractColor(uint8_t position, CRGB color)
 {
-  uint32_t blended_color = Substract(pixels.getPixelColor(position), color);
-  pixels.setPixelColor(position, blended_color);
+  _leds[position] -= color;
 }
 
 ///
 /// Color blending
 ///
-uint32_t Blend(uint32_t color1, uint32_t color2)
+CRGB Blend(CRGB color1, CRGB color2)
 {
   uint8_t r1, g1, b1;
   uint8_t r2, g2, b2;
   uint8_t r3, g3, b3;
 
-  r1 = (uint8_t)(color1 >> 16),
-  g1 = (uint8_t)(color1 >>  8),
-  b1 = (uint8_t)(color1 >>  0);
+  r1 = (uint8_t)color1.r,
+  g1 = (uint8_t)color1.g,
+  b1 = (uint8_t)color1.b;
 
-  r2 = (uint8_t)(color2 >> 16),
-  g2 = (uint8_t)(color2 >>  8),
-  b2 = (uint8_t)(color2 >>  0);
+  r2 = (uint8_t)color2.r,
+  g2 = (uint8_t)color2.g,
+  b2 = (uint8_t)color2.b;
 
-  return pixels.Color(constrain(r1 + r2, 0, 255), constrain(g1 + g2, 0, 255), constrain(b1 + b2, 0, 255));
+  return CRGB(constrain(r1 + r2, 0, 255), constrain(g1 + g2, 0, 255), constrain(b1 + b2, 0, 255));
 }
 
 ///
 /// Color blending
 ///
-uint32_t Substract(uint32_t color1, uint32_t color2)
+CRGB Substract(CRGB color1, CRGB color2)
 {
-  uint8_t r1, g1, b1;
-  uint8_t r2, g2, b2;
-  uint8_t r3, g3, b3;
-  int16_t r, g, b;
-
-  r1 = (uint8_t)(color1 >> 16),
-  g1 = (uint8_t)(color1 >>  8),
-  b1 = (uint8_t)(color1 >>  0);
-
-  r2 = (uint8_t)(color2 >> 16),
-  g2 = (uint8_t)(color2 >>  8),
-  b2 = (uint8_t)(color2 >>  0);
-
-  r = (int16_t)r1 - (int16_t)r2;
-  g = (int16_t)g1 - (int16_t)g2;
-  b = (int16_t)b1 - (int16_t)b2;
-  if (r < 0) r = 0;
-  if (g < 0) g = 0;
-  if (b < 0) b = 0;
-
-  return pixels.Color(r, g, b);
+  return color1 - color2;
 }
 
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
-uint32_t Wheel(byte WheelPos)
+CRGB Wheel(byte WheelPos)
 {
   WheelPos = 255 - WheelPos;
   if (WheelPos < 85)
   {
-    return pixels.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+    return CRGB(255 - WheelPos * 3, 0, WheelPos * 3);
   }
   else if (WheelPos < 170)
   {
     WheelPos -= 85;
-    return pixels.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+    return CRGB(0, WheelPos * 3, 255 - WheelPos * 3);
   }
   else
   {
     WheelPos -= 170;
-    return pixels.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+    return CRGB(WheelPos * 3, 255 - WheelPos * 3, 0);
   }
 }
 
 void saveState() {
-  return;
   #ifdef DEBUG
   Serial.println("Save state");
   _outputString = String("Save state");
@@ -1001,9 +1004,9 @@ void saveState() {
   uint8_t r;
   uint8_t g;
   uint8_t b;
-  r = (uint8_t)(pickedColor >> 16),
-  g = (uint8_t)(pickedColor >>  8),
-  b = (uint8_t)(pickedColor >>  0);
+  r = (uint8_t)pickedColor.Red,
+  g = (uint8_t)pickedColor.Green,
+  b = (uint8_t)pickedColor.Blue;
   
   EEPROM.write(0, (byte)_ledTheme);
   EEPROM.write(1, r);
@@ -1042,7 +1045,7 @@ void loadState() {
   dawn_minute = EEPROM.read(7);
   dusk_hour = EEPROM.read(8);
   dusk_minute = EEPROM.read(9);
-  pickedColor = pixels.Color(r, g, b);
+  pickedColor = CRGB(r, g, b);
   #ifdef DEBUG
   Serial.println("Load state done");
   _outputString = String("Load state done");
@@ -1055,7 +1058,10 @@ void loadState() {
   getObject["hour_dusk"] = dusk_hour;
   getObject["minute_dusk"] = dusk_minute;
   getObject["theme"] = _ledTheme;
-  getObject["color"] = pickedColor;
+  getObject["color"] = uint32_t(0x00000000) |
+               (uint32_t(pickedColor.r) << 16) |
+               (uint32_t(pickedColor.g) << 8) |
+               uint32_t(pickedColor.b);
   getObject["do_dawn"] = doDawn;
   getObject["do_dusk"] = doDusk;
   char buffer[160];
