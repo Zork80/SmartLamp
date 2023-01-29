@@ -110,8 +110,8 @@ unsigned long activationDuration = 180000;
 #endif
 
 // Add your networks credentials here
-const char* ssid = "WLAN FS";
-const char* password = "8460856146271246";
+const char* ssid = "SID";
+const char* password = "Password";
 
 // Set web server port number to 80
 AsyncWebServer server(80);
