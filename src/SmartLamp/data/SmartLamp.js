@@ -2,16 +2,29 @@ var myOldActuals = 0;
 
 function onload() {
   switchLanguage();
-  
+
+  var language = window.navigator.userLanguage || window.navigator.language;
+  // Browser-Sprache auslesen
+  if(language.indexOf('de') !== -1) {
+    lang = 'de';
+  } else {
+    lang = 'en';
+  }
+  readConfig(lang);
+
   getTimeCall(makeTheCall, 1000);
   makeTheCall();
+  debugCall();
 }
 
 function valueChanged(iD) {
   switch (iD) {
     case 'NEXT':
       var newValue = myOldActuals.theme + 1;
-      if (newValue > 6) {
+      if (newValue == 7) {
+        newValue = 9;
+      }
+      if (newValue > 10) {
         newValue = 0;
       }
       if (!isNaN(newValue))
@@ -21,8 +34,11 @@ function valueChanged(iD) {
       break;
     case 'PREV':
       var newValue = myOldActuals.theme - 1;
-      if (newValue < 0) {
+      if (newValue == 8) {
         newValue = 6;
+      }
+      if (newValue < 0) {
+        newValue = 10;
       }
       if (!isNaN(newValue))
         setTimeValues({
@@ -102,6 +118,38 @@ function textSelector(element) {
   $(element).select();
 }
 
+function readConfig(lang) {
+  $.ajaxSetup({
+    async: true,
+    cache: false
+  });
+  var def = $.ajax({
+    method: "POST",
+    url: 'readconfig',
+    data: lang,
+    contentType: "text/plain;",
+    headers: {
+      'accept': 'application/json',
+      'Cache-Control': 'no-store'
+    },
+  });
+  def.done(function (data) {
+    if (data != "") {
+      //console.log(data);
+      var config = data;
+
+      for(i = 0; i < config.length; i++)
+      {
+        element = document.getElementById(i);
+        if (element != null)
+          element.innerHTML = config[i];
+      }
+    };
+
+    setTimeout(makeTheCall, 200);
+  })
+}
+
 function makeTheCall() {
   $.ajaxSetup({
     async: true,
@@ -116,22 +164,43 @@ function makeTheCall() {
     },
   });
   def.done(function (data) {
-    if (data === "") {
-      return
-    };
-    //console.log(data);
-    var myActuals = data;
+    if (data != "") {
+      //console.log(data);
+      var myActuals = data;
 
-    if (myActuals.theme != myOldActuals.theme) {
-      document.getElementById('_ledTheme').innerHTML = "LED Thema " + parseInt(myActuals.theme);
-      _ledTheme = myActuals.theme;
-    }
-    myOldActuals = myActuals;
+      if (myActuals.theme != myOldActuals.theme) {
+        document.getElementById('_ledTheme').innerHTML = "LED Thema " + parseInt(myActuals.theme);
+        _ledTheme = myActuals.theme;
+      }
+      myOldActuals = myActuals;
+    };
 
     setTimeout(makeTheCall, 200);
   })
 }
 
+function debugCall() {
+  $.ajaxSetup({
+    async: true,
+    cache: false
+  });
+  var def = $.ajax({
+    method: "GET",
+    url: 'debug',
+    headers: {
+      'accept': 'text/plain',
+      'Cache-Control': 'no-store'
+    },
+  });
+  def.done(function (data) {
+    if (data != "") {
+      console.log(data);
+      document.getElementById('DEBUG').innerHTML = data;
+    };
+
+    setTimeout(debugCall, 200);
+  })
+}
 
 function getTimeCall() {
   $.ajaxSetup({
