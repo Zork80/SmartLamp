@@ -2,7 +2,16 @@ var myOldActuals = 0;
 
 function onload() {
   switchLanguage();
-  
+
+  var language = window.navigator.userLanguage || window.navigator.language;
+  // Browser-Sprache auslesen
+  if(language.indexOf('de') !== -1) {
+    lang = 'de';
+  } else {
+    lang = 'en';
+  }
+  readConfig(lang);
+
   getTimeCall(makeTheCall, 1000);
   makeTheCall();
   debugCall();
@@ -107,6 +116,38 @@ function setTimeValues(cdo) {
 function textSelector(element) {
   /*bei Auswahl des Eingabefeldes wird der gesamte Inhalt markiert*/
   $(element).select();
+}
+
+function readConfig(lang) {
+  $.ajaxSetup({
+    async: true,
+    cache: false
+  });
+  var def = $.ajax({
+    method: "POST",
+    url: 'readconfig',
+    data: lang,
+    contentType: "text/plain;",
+    headers: {
+      'accept': 'application/json',
+      'Cache-Control': 'no-store'
+    },
+  });
+  def.done(function (data) {
+    if (data != "") {
+      //console.log(data);
+      var config = data;
+
+      for(i = 0; i < config.length; i++)
+      {
+        element = document.getElementById(i);
+        if (element != null)
+          element.innerHTML = config[i];
+      }
+    };
+
+    setTimeout(makeTheCall, 200);
+  })
 }
 
 function makeTheCall() {

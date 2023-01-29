@@ -48,36 +48,28 @@
      <p></p>
      <div class="row">   
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="0" onclick="valueChanged(this.id)">
-        <Span class="lang de">Strahler</Span>
-        <Span class="lang en">Spot</Span>
+        <Span>Theme 0</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="1" onclick="valueChanged(this.id)">
-        <Span class="lang de">Feuer</Span>
-        <Span class="lang en">Fire</Span>
+        <Span>Theme 1</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="2" onclick="valueChanged(this.id)">
-        <Span class="lang de">Gelb + Strahler</Span>
-        <Span class="lang en">Yellow + Spot</Span>
+        <Span>Theme 2</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="3" onclick="valueChanged(this.id)">
-        <Span class="lang de">Gelb</Span>
-        <Span class="lang en">Yellow</Span>
+        <Span>Theme 3</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="4" onclick="valueChanged(this.id)">
-        <Span class="lang de">Hell</Span>
-        <Span class="lang en">Bright</Span>
+        <Span>Theme 4</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="5" onclick="valueChanged(this.id)">
-        <Span class="lang de">Nachtlicht</Span>
-        <Span class="lang en">Night Light</Span>
+        <Span>Theme 5</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="9" onclick="valueChanged(this.id)">
-        <Span class="lang de">Welle</Span>
-        <Span class="lang en">Wave</Span>
+        <Span>Theme 9</Span>
        </button></div>
        <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="10" onclick="valueChanged(this.id)">
-        <Span class="lang de">Regenbogen</Span>
-        <Span class="lang en">Rainbow</Span>
+        <Span>Theme 10</Span>
        </button></div>
       </div>
      
@@ -85,8 +77,7 @@
         <input type="color" class="form-control" id="colorpicker" onchange="valueChanged(this.id)" value="#0000ff">
         <div class="input-group-append">
           <button class="btn btn-success btn-lg" type="button" id="6" onclick="valueChanged(this.id)">
-            <Span class="lang de">Wahl</Span>
-            <Span class="lang en">Selection</Span>
+            <Span>Theme 6</Span>
           </button>
         </div>
       </div>
@@ -94,7 +85,7 @@
       <div class="col-sm-5">
         <div class="form-group">
         <label class="col-sm-4"><input type="checkbox" id="dawnCheck" onchange="valueChanged(this.id)" value="">
-          <Span class="lang de">Morgengrauen</Span>
+          <Span class="lang de">Morgendämmerung</Span>
           <Span class="lang en">Dawn</Span>
         </label>
         <div class="col-sm-1">
@@ -104,7 +95,9 @@
       </div>
       <div class="col-sm-5">
       <div class="form-group">
-        <label class="col-sm-4" ><input type="checkbox" id="duskCheck" onchange="valueChanged(this.id)" value=""><span class="lang de">Dämmerung</span><span class="lang en">Dusk</span></label>
+        <label class="col-sm-4" ><input type="checkbox" id="duskCheck" onchange="valueChanged(this.id)" value="">
+          <span class="lang de">Abenddämmerung</span>
+          <span class="lang en">Dusk</span></label>
         <div class="col-sm-1">
           <input type="time" id="DUSK_SET" onblur="valueChanged(this.id)" onclick="javascript:textSelector(this)"/>
         </div>

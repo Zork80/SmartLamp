@@ -13,8 +13,8 @@
 #include <EEPROM.h>
 #include "SPIFFS.h"
 
-#define ROOFLIGHT
-//#define ISSMARTLAMP
+//#define ROOFLIGHT
+#define ISSMARTLAMP
 
 #ifdef ISSMARTLAMP
   //#define LOADTHEME
@@ -55,6 +55,7 @@
 
 #ifdef ISSMARTLAMP
   #define PIXELSPERSTAGE 24
+  //#define PIXELSPERSTAGE 12
   #define STAGES 1
 #else
   #define PIXELSPERSTAGE 36
@@ -63,6 +64,7 @@
 #define NUMPIXELS PIXELSPERSTAGE * STAGES
 
 byte _ledTheme = 0;
+byte _ledThemeLast = 0;
 unsigned long receiveTime = -1;
 
 // Hier wird die Anzahl der angeschlossenen WS2812 LEDs bzw. NeoPixel angegeben
@@ -122,7 +124,8 @@ bool doDawn = false;
 int dawn_hour = 6;
 int dawn_minute = 0;
 int light_interval = 60;
-
+int light_interval_s = light_interval * 60 ;  
+  
 bool doDusk = false;
 int dusk_hour = 22;
 int dusk_minute = 0;
@@ -130,14 +133,315 @@ int dusk_minute = 0;
 bool forward = true;
 int waveDelay = 100;
 
-bool isDynamicTheme[] = { false, true, false, false, false, true, false, true, true, true, true };
 bool isThemeActive = false;
 bool isSettingTheme = false;
 bool firstAfterSwitch = true;
 
+int dawnTheme = 7;
+int duskTheme = 8;
+#ifdef HASPIR
+int neutralTheme = 5;
+#else
+int neutralTheme = 0;
+#endif
+int dawnSecondsGone = 0;
+int duskSecondsGone = 0;
+
 struct tm timeinfo;
 
 String _outputString = String("");
+
+typedef void (* ThemeFP)();
+
+void ThemeOff()
+{
+  fill_solid(_leds, NUMPIXELS, off);
+  isLedOn = false;
+  #ifdef DOUBLERELAY
+  isSpotlightOn = true;
+  #endif
+}
+
+void ThemeFire()
+{
+  if (!isThemeActive) 
+  {
+      fill_solid(_leds, NUMPIXELS, off);
+  }
+  for (int i = 0; i < NUMPIXELS; i++)
+  {
+    AddColor(i, fireColor);
+    int r = random(80);
+    CRGB diff_color = CRGB(r, r / 2, r / 2);
+    SubstractColor(i, diff_color);
+  }
+
+  delay(random(50, 150));
+}
+
+void ThemeYellowPlusSpot()
+{
+  fill_solid(_leds, NUMPIXELS, yellow2);
+  #ifdef DOUBLERELAY
+  isSpotlightOn = true;
+  #endif    
+}
+
+void ThemeYellow()
+{
+  fill_solid(_leds, NUMPIXELS, yellow2);
+}
+
+void ThemeYellowWarmWhite()
+{
+  fill_solid(_leds, NUMPIXELS, warmWhite);
+}
+
+void ThemeNightLight()
+{
+  #ifdef HASPIR
+  _outputString = String("Millis since last activation: ") + String(millis() - lastActivationTime);
+  if(millis() - lastActivationTime < activationDuration) {      
+    fill_solid(_leds, NUMPIXELS, warmWhiteDark);
+    isLedOn = true;
+  }
+  else {
+    fill_solid(_leds, NUMPIXELS, off);
+    isLedOn = false;
+  }
+  #else
+  fill_solid(_leds, NUMPIXELS, warmWhiteDark);
+  #endif
+}
+
+void ThemePickedColor()
+{
+  fill_solid(_leds, NUMPIXELS, pickedColor);
+}
+
+void ThemeDawn()
+{
+  if (dawnSecondsGone > 0 && dawnSecondsGone < light_interval_s)
+  {
+    int dimFactor = ceil(light_interval * 60 / 255.0);
+    int dim = (dawnSecondsGone / dimFactor);
+    if (dim > 255)
+      dim = 255;
+    if (dim < 0)
+      dim = 0;
+    CRGB color = CRGB(dim, dim, dim);
+    fill_solid(_leds, NUMPIXELS, color);
+  }
+  else
+  {
+    fill_solid(_leds, NUMPIXELS, off);
+    
+    #ifdef HASPIR     
+    if(_ledTheme != 5) {
+      _ledTheme = 5;
+      saveState();
+    }
+    #endif
+  }
+}
+void ThemeDusk()
+{
+  if (duskSecondsGone > 0 && duskSecondsGone < light_interval_s)
+  {
+    int dimFactor = ceil(light_interval_s / 255.0);
+    int dim = ((light_interval_s - duskSecondsGone) / dimFactor);
+    if (dim > 255)
+      dim = 255;
+    if (dim < 0)
+      dim = 0;
+
+    CRGB color = CRGB(dim, dim, dim / 4);
+    fill_solid(_leds, NUMPIXELS, color);
+  }
+  else
+  {
+    fill_solid(_leds, NUMPIXELS, off);
+    #ifdef HASPIR     
+    if(_ledTheme != 5) {
+      _ledTheme = 5;
+      saveState();
+    }
+    #endif
+  }
+}
+
+void ThemeWave()
+{
+  if (!isThemeActive) {
+    waveColorAct = waveColorDark;
+    fill_solid(_leds, NUMPIXELS, waveColorAct);
+
+    waveDelay = random(10, 300);
+  }
+
+  uint8_t r, g, b; 
+  r = (uint8_t)waveColorAct.r,
+  g = (uint8_t)waveColorAct.g,
+  b = (uint8_t)waveColorAct.b;
+
+  if(forward)
+  {
+    r++;
+    g++;
+
+    if(r >= 20) {
+      forward = false;
+      waveDelay = random(10, 300);
+    }
+  }
+  else{
+    r--;
+    g--;      
+
+    if(r <= 0) {
+      forward = true;
+      waveDelay = random(10, 300);
+    }
+  }
+  waveColorAct = CRGB(r, g, b);
+  
+  fill_solid(_leds, NUMPIXELS, waveColorAct);
+  
+  delay(waveDelay);
+}
+
+void ThemeRainbow()
+{
+  counter++;
+  counter = counter % 256;
+
+  float offset = 256.0 / STAGES;
+  CRGB rb[STAGES];
+
+  for (int i = 0; i < STAGES; i++)
+  {
+    rb[i] = Wheel((int)(counter + i * offset) % 256);
+  }
+
+  int j = 0;
+  for (int i = STAGES - 1; i >= 0; i--)
+  {
+    for(int j = 0; j < PIXELSPERSTAGE; j++)
+    {
+      _leds[i*PIXELSPERSTAGE + j] = rb[i];
+    }
+    //_leds(j++ * PIXELSPERSTAGE, PIXELSPERSTAGE).fill_solid(rb[i]);
+  }
+}
+
+void ThemeAlert()
+{
+    fill_solid(_leds, NUMPIXELS, off);
+
+    int delayFactor = 4;
+
+    CRGB color1;
+    CRGB color2;
+
+    switch (counter / delayFactor)
+    {
+      case 0:
+        color1 = red;
+        color2 = blue;
+        break;
+      case 1:
+        color1 = blue;
+        color2 = red;
+        break;
+    }
+
+    fill_solid(_leds, NUMPIXELS, color1);
+
+    counter++;
+    counter = counter % (2 * delayFactor);
+}
+
+const byte themeCount = 11;
+bool isDynamicTheme[themeCount] = {
+  false,
+  true,
+#ifdef ROOFLIGHT
+  false,
+#else
+  true,
+#endif
+  false,
+  false,
+  true,
+  false,
+  true,
+  true,
+  true,
+  true
+  };
+  
+ThemeFP themeFunctions[themeCount] = { 
+  ThemeOff,
+  ThemeFire,
+#ifdef ROOFLIGHT
+  ThemeYellowPlusSpot, 
+#else
+  ThemeAlert,
+#endif
+  ThemeYellow,
+  ThemeYellowWarmWhite,
+  ThemeNightLight,
+  ThemePickedColor,
+  ThemeDawn,
+  ThemeDusk,
+  ThemeWave,
+  ThemeRainbow
+  };
+
+String themeNames[themeCount] = {
+#ifdef ROOFLIGHT
+  "Spot",
+#else
+  "Off",
+#endif
+  "Fire",
+#ifdef ROOFLIGHT
+  "Yellow + Spot", 
+#else
+  "Alert",
+#endif
+  "Yellow",
+  "Bright",
+  "Night Light",
+  "Selection",
+  "Dawn",
+  "Dusk",
+  "Wave",
+  "Rainbow"
+  };
+
+String themeNames_de[themeCount] = {
+#ifdef ROOFLIGHT
+  "Strahler",
+#else
+  "Aus",
+#endif
+  "Feuer",
+#ifdef ROOFLIGHT
+  "Gelb + Strahler", 
+#else
+  "Alarm",
+#endif
+  "Gelb",
+  "Hell",
+  "Nachtlicht",
+  "Wahl",
+  "Morgendämmerung",
+  "Abenddämmerung",
+  "Welle",
+  "Regenbogen"
+  };
+
 
 TaskHandle_t Task1;
 TaskHandle_t Task2;
@@ -324,6 +628,9 @@ void setup()
 
   server.on("/read", HTTP_GET, handle_read);
 
+  server.on("/readconfig", HTTP_POST, [](AsyncWebServerRequest *request){
+  }, NULL, handle_read_config);
+
   server.on("/debug", HTTP_GET, handle_debug);
     
   server.onNotFound(handle_NotFound);
@@ -402,10 +709,10 @@ void Task2code( void * pvParameters)
         {
           ledTheme++;
   
-          if (ledTheme == 7) {
-            ledTheme = 9;
+          if (ledTheme == duskTheme) {
+            ledTheme = dawnTheme + 1;
           }
-          if (ledTheme > 10) {
+          if (ledTheme >= themeCount) {
             ledTheme = 1;
           }
           setLedTheme(ledTheme);
@@ -610,6 +917,26 @@ void handle_read(AsyncWebServerRequest *request) {
   request->send(200, "text/json", buffer);
 }
 
+void handle_read_config(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+  String input = String((const char*)data).substring(0,2);
+
+  String *themeNamesTmp;
+  if(input == "de")
+    themeNamesTmp = themeNames_de;
+  else
+    themeNamesTmp = themeNames;
+  
+  DynamicJsonDocument doc(1024);
+  for(int i =0; i < themeCount; i++)
+    doc.add(themeNamesTmp[i]);
+
+  char buffer[160];
+  serializeJson(doc, buffer);
+  //Serial.println(buffer);
+  
+  request->send(200, "text/json", buffer);
+}
+
 void handle_debug(AsyncWebServerRequest *request) {
   String outputString = _outputString;
   _outputString = String("");
@@ -619,8 +946,6 @@ void handle_debug(AsyncWebServerRequest *request) {
 void handle_NotFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
-
-int _ledThemeLast = 0;
 
 void setLed(byte ledTheme) {
   isSettingTheme = true;
@@ -640,45 +965,30 @@ void setLed(byte ledTheme) {
   year = timeinfo.tm_year + 1900;
   weekday = timeinfo.tm_wday + 1;
 
-  int light_interval_s = light_interval * 60 ;  
-  int dawnSecondsGone = 0;
   if (doDawn) {
     dawnSecondsGone = ((hour - dawn_hour) * 60 + (minute - dawn_minute)) * 60 + second;
     if (dawnSecondsGone > 0 && dawnSecondsGone < light_interval_s)
-      if (ledTheme != 7)
+      if (ledTheme != dawnTheme)
       {      
-        #ifdef HASPIR     
-        if(_ledTheme != 5) {
-          _ledTheme = 5;
+        if(_ledTheme != neutralTheme)
+        {
+          _ledTheme = neutralTheme;
           saveState();
         }
-        #else
-        if(_ledTheme != 0) {
-          _ledTheme = 0;
-          saveState();
-        }
-        #endif
-        ledTheme = 7;
+        ledTheme = dawnTheme;
       }
   }
-  int duskSecondsGone = 0;
   if (doDusk) {
     duskSecondsGone = ((hour - dusk_hour) * 60 + (minute - dusk_minute)) * 60 + second;
     if (duskSecondsGone > 0 && duskSecondsGone < light_interval_s)
-      if (ledTheme != 8)
+      if (ledTheme != duskTheme)
       {
-        #ifdef HASPIR     
-        if(_ledTheme != 5) {
-          _ledTheme = 5;
+        if(_ledTheme != neutralTheme)
+        {
+          _ledTheme = neutralTheme;
           saveState();
         }
-        #else
-        if(_ledTheme != 0) {
-          _ledTheme = 0;
-          saveState();
-        }
-        #endif
-        ledTheme = 8;
+        ledTheme = duskTheme;
       }
   }
   if(_ledThemeLast != ledTheme)
@@ -697,104 +1007,7 @@ void setLed(byte ledTheme) {
   isSpotlightOn = false;
   #endif
 
-  if (ledTheme == 0 || _ledThemeLast == 0)
-  {
-    fill_solid(_leds, NUMPIXELS, off);
-  }
-  if (ledTheme == 0) 
-  {
-    isLedOn = false;
-    #ifdef DOUBLERELAY
-    isSpotlightOn = true;
-    #endif
-  }
-  if (ledTheme == 1) {
-    Fire();
-  }
-  else if (ledTheme == 2) {
-    fill_solid(_leds, NUMPIXELS, yellow2);
-    #ifdef DOUBLERELAY
-    isSpotlightOn = true;
-    #endif    
-  }
-  else if (ledTheme == 3) {
-    fill_solid(_leds, NUMPIXELS, yellow2);
-  }
-  else if (ledTheme == 4) {
-    fill_solid(_leds, NUMPIXELS, warmWhite);
-  }
-  else if (ledTheme == 5) {
-    #ifdef HASPIR
-    _outputString = String("Millis since last activation: ") + String(millis() - lastActivationTime);
-    if(millis() - lastActivationTime < activationDuration) {      
-      fill_solid(_leds, NUMPIXELS, warmWhiteDark);
-      isLedOn = true;
-    }
-    else {
-      fill_solid(_leds, NUMPIXELS, off);
-      isLedOn = false;
-    }
-    #else
-    fill_solid(_leds, NUMPIXELS, warmWhiteDark);
-    #endif
-  }
-  else if (ledTheme == 6) {
-    fill_solid(_leds, NUMPIXELS, pickedColor);
-  }
-  else if (ledTheme == 7) {
-    if (dawnSecondsGone > 0 && dawnSecondsGone < light_interval_s)
-    {
-      int dimFactor = ceil(light_interval * 60 / 255.0);
-      int dim = (dawnSecondsGone / dimFactor);
-      if (dim > 255)
-        dim = 255;
-      if (dim < 0)
-        dim = 0;
-      CRGB color = CRGB(dim, dim, dim);
-      fill_solid(_leds, NUMPIXELS, color);
-    }
-    else
-    {
-      fill_solid(_leds, NUMPIXELS, off);
-      
-      #ifdef HASPIR     
-      if(_ledTheme != 5) {
-        _ledTheme = 5;
-        saveState();
-      }
-      #endif
-    }
-  }
-  else if (ledTheme == 8) {
-    if (duskSecondsGone > 0 && duskSecondsGone < light_interval_s)
-    {
-      int dimFactor = ceil(light_interval_s / 255.0);
-      int dim = ((light_interval_s - duskSecondsGone) / dimFactor);
-      if (dim > 255)
-        dim = 255;
-      if (dim < 0)
-        dim = 0;
-
-      CRGB color = CRGB(dim, dim, dim / 4);
-      fill_solid(_leds, NUMPIXELS, color);
-    }
-    else
-    {
-      fill_solid(_leds, NUMPIXELS, off);
-      #ifdef HASPIR     
-      if(_ledTheme != 5) {
-        _ledTheme = 5;
-        saveState();
-      }
-      #endif
-    }
-  }
-  else if (ledTheme == 9) {
-    Wave();
-  }
-  else if (ledTheme == 10) {
-    Rainbow();
-  }
+  themeFunctions[ledTheme]();
 
   firstAfterSwitch = false;
   #ifdef ROOFLIGHT
@@ -821,114 +1034,6 @@ void setLed(byte ledTheme) {
   
   isThemeActive = true;
   isSettingTheme = false;
-}
-
-void Fire()
-{
-  if (!isThemeActive) 
-  {
-      fill_solid(_leds, NUMPIXELS, off);
-  }
-  for (int i = 0; i < NUMPIXELS; i++)
-  {
-    AddColor(i, fireColor);
-    int r = random(80);
-    CRGB diff_color = CRGB(r, r / 2, r / 2);
-    SubstractColor(i, diff_color);
-  }
-
-  delay(random(50, 150));
-}
-
-void Rainbow()
-{
-  counter++;
-  counter = counter % 256;
-
-  float offset = 256.0 / STAGES;
-  CRGB rb[STAGES];
-
-  for (int i = 0; i < STAGES; i++)
-  {
-    rb[i] = Wheel((int)(counter + i * offset) % 256);
-  }
-
-  int j = 0;
-  for (int i = STAGES - 1; i >= 0; i--)
-  {
-    for(int j = 0; j < PIXELSPERSTAGE; j++)
-    {
-      _leds[i*PIXELSPERSTAGE + j] = rb[i];
-    }
-    //_leds(j++ * PIXELSPERSTAGE, PIXELSPERSTAGE).fill_solid(rb[i]);
-  }
-}
-
-void Wave()
-{
-  if (!isThemeActive) {
-    waveColorAct = waveColorDark;
-    fill_solid(_leds, NUMPIXELS, waveColorAct);
-
-    waveDelay = random(10, 300);
-  }
-
-  uint8_t r, g, b; 
-  r = (uint8_t)waveColorAct.r,
-  g = (uint8_t)waveColorAct.g,
-  b = (uint8_t)waveColorAct.b;
-
-  if(forward)
-  {
-    r++;
-    g++;
-
-    if(r >= 20) {
-      forward = false;
-      waveDelay = random(10, 300);
-    }
-  }
-  else{
-    r--;
-    g--;      
-
-    if(r <= 0) {
-      forward = true;
-      waveDelay = random(10, 300);
-    }
-  }
-  waveColorAct = CRGB(r, g, b);
-  
-  fill_solid(_leds, NUMPIXELS, waveColorAct);
-  
-  delay(waveDelay);
-}
-
-void Alert()
-{
-    fill_solid(_leds, NUMPIXELS, off);
-
-    int delayFactor = 4;
-
-    CRGB color1;
-    CRGB color2;
-
-    switch (counter / delayFactor)
-    {
-      case 0:
-        color1 = red;
-        color2 = blue;
-        break;
-      case 1:
-        color1 = blue;
-        color2 = red;
-        break;
-    }
-
-    fill_solid(_leds, NUMPIXELS, color1);
-
-    counter++;
-    counter = counter % (2 * delayFactor);
 }
 
 ///
