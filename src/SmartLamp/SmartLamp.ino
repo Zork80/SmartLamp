@@ -153,6 +153,14 @@ String _outputString = String("");
 
 typedef void (* ThemeFP)();
 
+struct ThemeEntry
+{
+  ThemeFP Function;
+  bool IsDynamic;
+  String Name;
+  String Name_de;
+};
+
 void ThemeOff()
 {
   fill_solid(_leds, NUMPIXELS, off);
@@ -200,8 +208,17 @@ void ThemeYellowWarmWhite()
 void ThemeNightLight()
 {
   #ifdef HASPIR
-  _outputString = String("Millis since last activation: ") + String(millis() - lastActivationTime);
-  if(millis() - lastActivationTime < activationDuration) {      
+  bool doSwitchOff = false;
+  unsigned long actTime = millis();
+  if(activationDuration < actTime - lastActivationTime)
+  {
+    lastActivationTime = actTime - activationDuration;
+    doSwitchOff = true;
+  }
+  unsigned long activationTimeLeft = activationDuration - (actTime - lastActivationTime);
+
+  _outputString = String("Millis to switch off: ") + String(activationTimeLeft);
+  if(activationTimeLeft > 0) {      
     fill_solid(_leds, NUMPIXELS, warmWhiteDark);
     isLedOn = true;
   }
@@ -362,89 +379,33 @@ void ThemeAlert()
 }
 
 const byte themeCount = 11;
-bool isDynamicTheme[themeCount] = {
-  false,
-  true,
-#ifdef ROOFLIGHT
-  false,
-#else
-  true,
-#endif
-  false,
-  false,
-  true,
-  false,
-  true,
-  true,
-  true,
-  true
-  };
-  
-ThemeFP themeFunctions[themeCount] = { 
-  ThemeOff,
-  ThemeFire,
-#ifdef ROOFLIGHT
-  ThemeYellowPlusSpot, 
-#else
-  ThemeAlert,
-#endif
-  ThemeYellow,
-  ThemeYellowWarmWhite,
-  ThemeNightLight,
-  ThemePickedColor,
-  ThemeDawn,
-  ThemeDusk,
-  ThemeWave,
-  ThemeRainbow
-  };
 
-String themeNames[themeCount] = {
-#ifdef ROOFLIGHT
-  "Spot",
-#else
-  "Off",
-#endif
-  "Fire",
-#ifdef ROOFLIGHT
-  "Yellow + Spot", 
-#else
-  "Alert",
-#endif
-  "Yellow",
-  "Bright",
-  "Night Light",
-  "Selection",
-  "Dawn",
-  "Dusk",
-  "Wave",
-  "Rainbow"
-  };
-
-String themeNames_de[themeCount] = {
-#ifdef ROOFLIGHT
-  "Strahler",
-#else
-  "Aus",
-#endif
-  "Feuer",
-#ifdef ROOFLIGHT
-  "Gelb + Strahler", 
-#else
-  "Alarm",
-#endif
-  "Gelb",
-  "Hell",
-  "Nachtlicht",
-  "Wahl",
-  "Morgendämmerung",
-  "Abenddämmerung",
-  "Welle",
-  "Regenbogen"
-  };
-
-
-TaskHandle_t Task1;
-TaskHandle_t Task2;
+ThemeEntry themes[themeCount] =
+{
+  { ThemeOff,             false, 
+  #ifdef ROOFLIGHT
+                                 "Spot", "Strahler"
+  #else
+                                 "Off", "Aus"
+  #endif
+                                              },
+  { ThemeYellow,          false, "Yellow", "Gelb" },
+  { 
+  #ifdef ROOFLIGHT
+    ThemeYellowPlusSpot,  false, "Yellow + Spot", "Gelb + Strahler"
+  #else
+    ThemeAlert,           true, "Alert", "Alarm"
+  #endif
+                                              },
+  { ThemeNightLight,      true,  "Night Light", "Nachtlicht" },
+  { ThemeYellowWarmWhite, false, "Bright", "Hell" },
+  { ThemeFire,            true,  "Fire", "Feuer" },
+  { ThemePickedColor,     false, "Selection", "Wahl" },
+  { ThemeDawn,            true,  "Dawn", "Morgendämmerung" },
+  { ThemeDusk,            true,  "Dusk", "Abenddämmerung" },
+  { ThemeWave,            true,  "Wave", "Welle" },
+  { ThemeRainbow,         true,  "Rainbow", "Regenbogen" }
+};
 
 // https://randomnerdtutorials.com/esp32-ntp-timezones-daylight-saving/
 void setTimezone(String timezone){
@@ -464,7 +425,13 @@ void setup()
   else 
     digitalWrite(RELAYPIN , HIGH);
   #endif
-  
+
+  #ifdef DEBUG
+  Serial.begin(115200);
+  Serial.print("setup() running on core ");
+  Serial.println(xPortGetCoreID());
+  #endif
+    
   #ifdef DOUBLERELAY          
     pinMode(RELAYPIN2, OUTPUT);
     #ifdef HASSPOTLIGHT
@@ -478,13 +445,6 @@ void setup()
   #endif
   #ifdef ISSMARTLAMP
   FastLED.addLeds<WS2811, SIGNALPIN, GRB>(_leds, NUMPIXELS);
-  #endif
-
-  
-  #ifdef DEBUG
-  Serial.begin(115200);
-  Serial.print("setup() running on core ");
-  Serial.println(xPortGetCoreID());
   #endif
 
   if (!EEPROM.begin(512)) // size in Byte
@@ -645,36 +605,11 @@ void setup()
     pinMode(RCReveivePin, INPUT);
     mySwitch.enableReceive(digitalPinToInterrupt(RCReveivePin));  // Receiver on interrupt 0 => that is pin #2
   #endif
-
-  xTaskCreatePinnedToCore(
-    Task1code, /* Function to implement the task */
-    "Task1", /* Name of the task */
-    10000,  /* Stack size in words */
-    NULL,  /* Task input parameter */
-    5,  /* Priority of the task */
-    &Task1,  /* Task handle. */
-    0); /* Core where the task should run */
-
-
-  xTaskCreatePinnedToCore(
-    Task2code, /* Function to implement the task */
-    "Task2", /* Name of the task */
-    10000,  /* Stack size in words */
-    NULL,  /* Task input parameter */
-    1,  /* Priority of the task */
-    &Task2,  /* Task handle. */
-    1); /* Core where the task should run */      
-
 }
 
+byte timeCounter = 0;
 void loop()
 {
-}
-
-void Task2code( void * pvParameters)
-{
-  for(;;)
-  {
     int wifi_retry = 0;
     while(WiFi.status() != WL_CONNECTED && wifi_retry < 5) {
       wifi_retry++;
@@ -709,8 +644,8 @@ void Task2code( void * pvParameters)
         {
           ledTheme++;
   
-          if (ledTheme == duskTheme) {
-            ledTheme = dawnTheme + 1;
+          if (ledTheme == dawnTheme) {
+            ledTheme = duskTheme + 1;
           }
           if (ledTheme >= themeCount) {
             ledTheme = 1;
@@ -719,7 +654,8 @@ void Task2code( void * pvParameters)
   
           #ifdef DEBUG
           Serial.print("LED Theme = ");
-          Serial.println(ledTheme);              
+          Serial.println(ledTheme);
+          _outputString = String("LED Theme = ") + String(ledTheme);
           #endif
         } 
         else if (mySwitch.getReceivedValue() == offValue) 
@@ -738,13 +674,6 @@ void Task2code( void * pvParameters)
       mySwitch.resetAvailable();
     }  
     #endif
-  }
-}
-
-int timeCounter = 0;
-
-void Task1code( void * parameter) { 
-  for (;;) {
 
     #ifdef HASPIR
     bool detected = digitalRead(PIRPIN);
@@ -779,7 +708,6 @@ void Task1code( void * parameter) {
       }
     }
     timeCounter++;
-  }
 }
 
 
@@ -901,12 +829,6 @@ void handle_rest(AsyncWebServerRequest *request, uint8_t *data, size_t len, size
   }
 }
 
-void setLedTheme(int ledTheme) {
-  //while(isSettingTheme) ;
-  _ledTheme = ledTheme;
-  isThemeActive = false;
-}
-
 void handle_read(AsyncWebServerRequest *request) {
   StaticJsonDocument<160> getObject = getJsonData();
 
@@ -920,12 +842,18 @@ void handle_read(AsyncWebServerRequest *request) {
 void handle_read_config(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
   String input = String((const char*)data).substring(0,2);
 
-  String *themeNamesTmp;
-  if(input == "de")
-    themeNamesTmp = themeNames_de;
-  else
-    themeNamesTmp = themeNames;
+  Serial.println(input);
   
+  String themeNamesTmp[themeCount];
+  for(int i = 0; i < themeCount; i++)
+  {
+    if(input == "de")
+      themeNamesTmp[i] = themes[i].Name_de;
+    else
+      themeNamesTmp[i] = themes[i].Name;
+
+  }
+
   DynamicJsonDocument doc(1024);
   for(int i =0; i < themeCount; i++)
     doc.add(themeNamesTmp[i]);
@@ -945,6 +873,13 @@ void handle_debug(AsyncWebServerRequest *request) {
 
 void handle_NotFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
+}
+
+
+void setLedTheme(int ledTheme) {
+  //while(isSettingTheme) ;
+  _ledTheme = ledTheme;
+  isThemeActive = false;
 }
 
 void setLed(byte ledTheme) {
@@ -997,7 +932,7 @@ void setLed(byte ledTheme) {
     isThemeActive = false;
   }
 
-  if(isThemeActive && !isDynamicTheme[ledTheme] && !firstAfterSwitch)
+  if(isThemeActive && !themes[ledTheme].IsDynamic && !firstAfterSwitch)
     return;
 
   isLedOn = true;
@@ -1007,7 +942,7 @@ void setLed(byte ledTheme) {
   isSpotlightOn = false;
   #endif
 
-  themeFunctions[ledTheme]();
+  themes[ledTheme].Function();
 
   firstAfterSwitch = false;
   #ifdef ROOFLIGHT
@@ -1104,7 +1039,7 @@ CRGB Wheel(byte WheelPos)
 void saveState() {
   #ifdef DEBUG
   Serial.println("Save state");
-  _outputString = String("Save state");
+  //_outputString = String("Save state");
   #endif
   uint8_t r;
   uint8_t g;
@@ -1126,7 +1061,7 @@ void saveState() {
   EEPROM.commit();
   #ifdef DEBUG
   Serial.println("Save state done");
-  _outputString = String("Save state done");
+  //_outputString = String("Save state done");
   #endif
 }
 

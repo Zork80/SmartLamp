@@ -1,4 +1,5 @@
 var myOldActuals = 0;
+var themes = null;
 
 function onload() {
   switchLanguage();
@@ -136,13 +137,13 @@ function readConfig(lang) {
   def.done(function (data) {
     if (data != "") {
       //console.log(data);
-      var config = data;
+      themes = data;
 
-      for(i = 0; i < config.length; i++)
+      for(i = 0; i < themes.length; i++)
       {
         element = document.getElementById(i);
         if (element != null)
-          element.innerHTML = config[i];
+          element.innerHTML = themes[i];
       }
     };
 
@@ -169,7 +170,10 @@ function makeTheCall() {
       var myActuals = data;
 
       if (myActuals.theme != myOldActuals.theme) {
-        document.getElementById('_ledTheme').innerHTML = "LED Thema " + parseInt(myActuals.theme);
+        if(themes == null)
+          document.getElementById('_ledTheme').innerHTML = "LED Thema " + parseInt(myActuals.theme);
+        else
+          document.getElementById('_ledTheme').innerHTML = "LED Thema " + themes[parseInt(myActuals.theme)];
         _ledTheme = myActuals.theme;
       }
       myOldActuals = myActuals;
