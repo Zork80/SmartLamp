@@ -65,7 +65,7 @@
 
 byte _ledTheme = 0;
 byte _ledThemeLast = 0;
-unsigned long receiveTime = -1;
+unsigned long receiveTime = 0;
 
 // Hier wird die Anzahl der angeschlossenen WS2812 LEDs bzw. NeoPixel angegeben
 CRGBArray<NUMPIXELS> _leds;
@@ -106,7 +106,7 @@ int counter = 0;
 
 #ifdef HASPIR
 unsigned long lastActivationTime;
-unsigned long activationDuration = 180000;
+unsigned long activationDuration = 180;
 #endif
 
 // Add your networks credentials here
@@ -209,22 +209,24 @@ void ThemeNightLight()
 {
   #ifdef HASPIR
   bool doSwitchOff = false;
-  unsigned long actTime = millis();
+  unsigned long actTime = millis() / 1000;
   if(activationDuration < actTime - lastActivationTime)
   {
-    lastActivationTime = actTime - activationDuration;
+    lastActivationTime = actTime- activationDuration;
     doSwitchOff = true;
   }
   unsigned long activationTimeLeft = activationDuration - (actTime - lastActivationTime);
 
-  _outputString = String("Millis to switch off: ") + String(activationTimeLeft);
-  if(activationTimeLeft > 0) {      
+  _outputString = String("Seconds to switch off: ") + String(activationTimeLeft);
+  if(activationTimeLeft > 0) 
+  {      
     fill_solid(_leds, NUMPIXELS, warmWhiteDark);
     isLedOn = true;
   }
-  else {
+  else 
+  {
     fill_solid(_leds, NUMPIXELS, off);
-    isLedOn = false;
+    //isLedOn = false;
   }
   #else
   fill_solid(_leds, NUMPIXELS, warmWhiteDark);
@@ -635,7 +637,7 @@ void loop()
     if (mySwitch.available()) {
       
       unsigned long receiveTimeAct = millis();
-      if (receiveTime < 0 || receiveTimeAct - receiveTime > 500) {
+      if (receiveTime <= 0 || receiveTimeAct - receiveTime > 500) {
   
         byte ledTheme = _ledTheme;
         receiveTime = receiveTimeAct;
@@ -678,12 +680,12 @@ void loop()
     #ifdef HASPIR
     bool detected = digitalRead(PIRPIN);
     if(detected) {
-      if(millis() - lastActivationTime > 1000){
+      if(millis() / 1000 - lastActivationTime > 1000){
         Serial.println("PIR");
         _outputString = String("PIR");
       }    
     
-      lastActivationTime = millis();
+      lastActivationTime = millis() / 1000;
     }
     #endif
     
@@ -700,12 +702,16 @@ void loop()
         #endif
         return;
       }
+      
       else {
         timeinfo = timeinfo_tmp;
+        /*
         char str[40];
         strftime(str, sizeof str, "%A, %B %d %Y %H:%M:%S zone %Z %z", &timeinfo); 
         _outputString = String(str);
+        */
       }
+      
     }
     timeCounter++;
 }
@@ -1044,9 +1050,9 @@ void saveState() {
   uint8_t r;
   uint8_t g;
   uint8_t b;
-  r = (uint8_t)pickedColor.Red,
-  g = (uint8_t)pickedColor.Green,
-  b = (uint8_t)pickedColor.Blue;
+  r = (uint8_t)pickedColor.r,
+  g = (uint8_t)pickedColor.g,
+  b = (uint8_t)pickedColor.b;
   
   EEPROM.write(0, (byte)_ledTheme);
   EEPROM.write(1, r);
