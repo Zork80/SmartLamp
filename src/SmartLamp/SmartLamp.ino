@@ -120,13 +120,13 @@ const char* ntpServer = "de.pool.ntp.org";
 const long  gmtOffset_sec = 3600;
 const int   daylightOffset_sec = 3600;
 
-bool doDawn = false;
+bool dawnDays[7] = {false, true, true, false, true, false, false};
 int dawn_hour = 6;
 int dawn_minute = 0;
 int light_interval = 60;
 int light_interval_s = light_interval * 60 ;  
   
-bool doDusk = false;
+bool duskDays[7] = {false, true, true, false, true, false, false};
 int dusk_hour = 22;
 int dusk_minute = 0;
 
@@ -242,14 +242,12 @@ void ThemeDawn()
 {
   if (dawnSecondsGone > 0 && dawnSecondsGone < light_interval_s)
   {
-    int dimFactor = ceil(light_interval * 60 / 255.0);
-    int dim = (dawnSecondsGone / dimFactor);
-    if (dim > 255)
-      dim = 255;
-    if (dim < 0)
-      dim = 0;
-    CRGB color = CRGB(dim, dim, dim);
-    fill_solid(_leds, NUMPIXELS, color);
+    float dimFactor = light_interval_s / 255.0;
+    byte dim = 255 - constrain(dawnSecondsGone / dimFactor, 0, 255);
+    _outputString = String("dawnSecondsGone = ") + String(dawnSecondsGone) + String("; Dim = ") + String(dim);
+      
+    _leds.fill_solid(CRGB::White);
+    _leds.fadeToBlackBy(dim);
   }
   else
   {
@@ -267,15 +265,12 @@ void ThemeDusk()
 {
   if (duskSecondsGone > 0 && duskSecondsGone < light_interval_s)
   {
-    int dimFactor = ceil(light_interval_s / 255.0);
-    int dim = ((light_interval_s - duskSecondsGone) / dimFactor);
-    if (dim > 255)
-      dim = 255;
-    if (dim < 0)
-      dim = 0;
+    float dimFactor = 255.0 / light_interval_s;
+    byte dim = constrain(duskSecondsGone * dimFactor, 0, 255);
+    _outputString = String("duskSecondsGone = ") + String(duskSecondsGone) + String("; Dim = ") + String(dim);
 
-    CRGB color = CRGB(dim, dim, dim / 4);
-    fill_solid(_leds, NUMPIXELS, color);
+    _leds.fill_solid(yellow);
+    _leds.fadeToBlackBy(dim);
   }
   else
   {
@@ -345,11 +340,11 @@ void ThemeRainbow()
   int j = 0;
   for (int i = STAGES - 1; i >= 0; i--)
   {
-    for(int j = 0; j < PIXELSPERSTAGE; j++)
-    {
-      _leds[i*PIXELSPERSTAGE + j] = rb[i];
-    }
-    //_leds(j++ * PIXELSPERSTAGE, PIXELSPERSTAGE).fill_solid(rb[i]);
+    //for(int j = 0; j < PIXELSPERSTAGE; j++)
+    //{
+    //  _leds[i*PIXELSPERSTAGE + j] = rb[i];
+    //}
+    _leds(j++ * PIXELSPERSTAGE, PIXELSPERSTAGE).fill_solid(rb[i]);
   }
 }
 
@@ -728,8 +723,8 @@ StaticJsonDocument<160> getJsonData() {
                (uint32_t(pickedColor.r) << 16) |
                (uint32_t(pickedColor.g) << 8) |
                uint32_t(pickedColor.b);
-  getObject["do_dawn"] = doDawn;
-  getObject["do_dusk"] = doDusk;
+  getObject["do_dawn"] = packDays(dawnDays) > 0;
+  getObject["do_dusk"] = packDays(duskDays) > 0;
 
   return getObject;
 }
@@ -813,14 +808,20 @@ void handle_rest(AsyncWebServerRequest *request, uint8_t *data, size_t len, size
         Serial.print("set do dawn ");
         Serial.println((bool)postObj["do_dawn"]);
         #endif
-        doDawn = (bool)postObj["do_dawn"];
+        bool doDawn = (bool)postObj["do_dawn"];
+        for (int i = 0; i < 7; i++) {
+          dawnDays[i] = doDawn;
+        }
       }
       if (postObj.containsKey("do_dusk")) {
         #ifdef DEBUG
         Serial.print("set do dusk ");
         Serial.println((bool)postObj["do_dusk"]);
         #endif
-        doDusk = (bool)postObj["do_dusk"];
+        bool doDusk = (bool)postObj["do_dusk"];
+        for (int i = 0; i < 7; i++) {
+          duskDays[i] = doDusk;
+        }
       }
 
       saveState();
@@ -906,11 +907,15 @@ void setLed(byte ledTheme) {
   year = timeinfo.tm_year + 1900;
   weekday = timeinfo.tm_wday + 1;
 
-  if (doDawn) {
+  // Check if the current day is set for dawn or dusk
+  bool doDawnToday = dawnDays[weekday - 1];
+  bool doDuskToday = duskDays[weekday - 1];
+
+  if (doDawnToday) {
     dawnSecondsGone = ((hour - dawn_hour) * 60 + (minute - dawn_minute)) * 60 + second;
     if (dawnSecondsGone > 0 && dawnSecondsGone < light_interval_s)
       if (ledTheme != dawnTheme)
-      {      
+      {
         if(_ledTheme != neutralTheme)
         {
           _ledTheme = neutralTheme;
@@ -919,7 +924,7 @@ void setLed(byte ledTheme) {
         ledTheme = dawnTheme;
       }
   }
-  if (doDusk) {
+  if (doDuskToday) {
     duskSecondsGone = ((hour - dusk_hour) * 60 + (minute - dusk_minute)) * 60 + second;
     if (duskSecondsGone > 0 && duskSecondsGone < light_interval_s)
       if (ledTheme != duskTheme)
@@ -1042,6 +1047,20 @@ CRGB Wheel(byte WheelPos)
   }
 }
 
+byte packDays(bool weekDays[]) {
+  byte packedDays = 0;
+  for (int i = 0; i < 7; i++) {
+    packedDays |= (weekDays[i] << i);
+  }
+  return packedDays;
+}
+
+void unpackDays(byte packedDays, bool *weekDays) {
+  for (int i = 0; i < 7; i++) {
+    weekDays[i] = ((packedDays >> i) & 1) > 0;
+  }
+}
+ 
 void saveState() {
   #ifdef DEBUG
   Serial.println("Save state");
@@ -1053,13 +1072,16 @@ void saveState() {
   r = (uint8_t)pickedColor.r,
   g = (uint8_t)pickedColor.g,
   b = (uint8_t)pickedColor.b;
+
+  byte packedDawnDays =  packDays(dawnDays);
+  byte packedDuskDays =  packDays(duskDays);
   
   EEPROM.write(0, (byte)_ledTheme);
   EEPROM.write(1, r);
   EEPROM.write(2, g);
   EEPROM.write(3, b);
-  EEPROM.write(4, doDawn);
-  EEPROM.write(5, doDusk);
+  EEPROM.write(4, packedDawnDays);
+  EEPROM.write(5, packedDuskDays);
   EEPROM.write(6, (byte)dawn_hour);
   EEPROM.write(7, (byte)dawn_minute);
   EEPROM.write(8, (byte)dusk_hour);
@@ -1085,8 +1107,8 @@ void loadState() {
   uint8_t r = EEPROM.read(1);
   uint8_t g = EEPROM.read(2);
   uint8_t b = EEPROM.read(3);
-  doDawn = EEPROM.read(4);
-  doDusk = EEPROM.read(5);
+  unpackDays(EEPROM.read(4), dawnDays);
+  unpackDays(EEPROM.read(5), duskDays);
   dawn_hour = EEPROM.read(6);
   dawn_minute = EEPROM.read(7);
   dusk_hour = EEPROM.read(8);
@@ -1108,8 +1130,8 @@ void loadState() {
                (uint32_t(pickedColor.r) << 16) |
                (uint32_t(pickedColor.g) << 8) |
                uint32_t(pickedColor.b);
-  getObject["do_dawn"] = doDawn;
-  getObject["do_dusk"] = doDusk;
+  getObject["do_dawn"] = packDays(dawnDays);
+  getObject["do_dusk"] = packDays(duskDays);
   char buffer[160];
   serializeJson(getObject, buffer);
   Serial.println(buffer);
