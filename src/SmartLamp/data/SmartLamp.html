@@ -82,9 +82,9 @@
         </div>
       </div>
      <form>
-      <div class="col-sm-5">
+      <div class="col-sm-12">
         <div class="form-group">
-        <label class="col-sm-4"><input type="checkbox" id="dawnCheck" onchange="valueChanged(this.id)" value="">
+        <label class="col-sm-4">
           <Span class="lang de">Morgendämmerung</Span>
           <Span class="lang en">Dawn</Span>
         </label>
@@ -92,14 +92,80 @@
           <input type="time" id="DAWN_SET" onblur="valueChanged(this.id)" onclick="javascript:textSelector(this)"/>
         </div>
         </div>
+        <div class="form-group">
+          <label class="col-sm-4">Wochentage:</label>
+          <div class="col-sm-8">
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnMonday" onchange="valueChanged(this.id)" value="">
+              <Span class="lang de">Montag</Span>
+              <Span class="lang en">Monday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnTuesday" onchange="valueChanged(this.id)" value=""> 
+              <Span class="lang de">Dienstag</Span>
+              <Span class="lang en">Tuesday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnWednesday" onchange="valueChanged(this.id)" value=""> 
+              <Span class="lang de">Mittwoch</Span>
+              <Span class="lang en">Wednesday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnThursday" onchange="valueChanged(this.id)" value="">
+              <Span class="lang de">Donnerstag</Span>
+              <Span class="lang en">Thursday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnFriday" onchange="valueChanged(this.id)" value="">
+              <Span class="lang de">Freitag</Span>
+              <Span class="lang en">Friday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnSaturday" onchange="valueChanged(this.id)" value="">
+              <Span class="lang de">Samstag</Span>
+              <Span class="lang en">Saturday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnSunday" onchange="valueChanged(this.id)" value="">
+              <Span class="lang de">Sonntag</Span>
+              <Span class="lang en">Sunday</Span>
+            </label>
+          </div>
+        </div>
       </div>
-      <div class="col-sm-5">
+      <div class="col-sm-12">
       <div class="form-group">
-        <label class="col-sm-4" ><input type="checkbox" id="duskCheck" onchange="valueChanged(this.id)" value="">
+        <label class="col-sm-4" >
           <span class="lang de">Abenddämmerung</span>
           <span class="lang en">Dusk</span></label>
         <div class="col-sm-1">
           <input type="time" id="DUSK_SET" onblur="valueChanged(this.id)" onclick="javascript:textSelector(this)"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-4">Wochentage:</label>
+        <div class="col-sm-8">
+          <label class="col-sm-4"></label><input type="checkbox" id="duskMonday" onchange="valueChanged(this.id)" value="">
+          <Span class="lang de">Montag</Span>
+          <Span class="lang en">Monday</Span>
+          </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskTuesday" onchange="valueChanged(this.id)" value=""> 
+          <Span class="lang de">Dienstag</Span>
+          <Span class="lang en">Tuesday</Span>
+        </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskWednesday" onchange="valueChanged(this.id)" value=""> 
+          <Span class="lang de">Mittwoch</Span>
+          <Span class="lang en">Wednesday</Span>
+        </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskThursday" onchange="valueChanged(this.id)" value="">
+          <Span class="lang de">Donnerstag</Span>
+          <Span class="lang en">Thursday</Span>
+        </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskFriday" onchange="valueChanged(this.id)" value="">
+          <Span class="lang de">Freitag</Span>
+          <Span class="lang en">Friday</Span>
+        </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskSaturday" onchange="valueChanged(this.id)" value="">
+          <Span class="lang de">Samstag</Span>
+          <Span class="lang en">Saturday</Span>
+        </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskSunday" onchange="valueChanged(this.id)" value="">
+          <Span class="lang de">Sonntag</Span>
+          <Span class="lang en">Sunday</Span>
+        </label>
         </div>
       </div>
       </div>

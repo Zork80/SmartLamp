@@ -723,8 +723,8 @@ StaticJsonDocument<160> getJsonData() {
                (uint32_t(pickedColor.r) << 16) |
                (uint32_t(pickedColor.g) << 8) |
                uint32_t(pickedColor.b);
-  getObject["do_dawn"] = packDays(dawnDays) > 0;
-  getObject["do_dusk"] = packDays(duskDays) > 0;
+  getObject["do_dawn"] = packDays(dawnDays);
+  getObject["do_dusk"] = packDays(duskDays);
 
   return getObject;
 }
@@ -808,20 +808,16 @@ void handle_rest(AsyncWebServerRequest *request, uint8_t *data, size_t len, size
         Serial.print("set do dawn ");
         Serial.println((bool)postObj["do_dawn"]);
         #endif
-        bool doDawn = (bool)postObj["do_dawn"];
-        for (int i = 0; i < 7; i++) {
-          dawnDays[i] = doDawn;
-        }
+        byte doDawn = (byte)postObj["do_dawn"];
+        unpackDays(doDawn, dawnDays);
       }
       if (postObj.containsKey("do_dusk")) {
         #ifdef DEBUG
         Serial.print("set do dusk ");
         Serial.println((bool)postObj["do_dusk"]);
         #endif
-        bool doDusk = (bool)postObj["do_dusk"];
-        for (int i = 0; i < 7; i++) {
-          duskDays[i] = doDusk;
-        }
+        byte doDusk = (byte)postObj["do_dusk"];
+        unpackDays(doDusk, duskDays);
       }
 
       saveState();
@@ -905,11 +901,11 @@ void setLed(byte ledTheme) {
   day = timeinfo.tm_mday;
   month = timeinfo.tm_mon + 1;
   year = timeinfo.tm_year + 1900;
-  weekday = timeinfo.tm_wday + 1;
+  weekday = (timeinfo.tm_wday + 6) % 7; //days since Monday
 
   // Check if the current day is set for dawn or dusk
-  bool doDawnToday = dawnDays[weekday - 1];
-  bool doDuskToday = duskDays[weekday - 1];
+  bool doDawnToday = dawnDays[weekday];
+  bool doDuskToday = duskDays[weekday];
 
   if (doDawnToday) {
     dawnSecondsGone = ((hour - dawn_hour) * 60 + (minute - dawn_minute)) * 60 + second;

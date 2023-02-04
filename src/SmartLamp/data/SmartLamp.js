@@ -18,6 +18,20 @@ function onload() {
   debugCall();
 }
 
+function packDays(weekDays) {
+  let packedDays = 0;
+  for (let i = 0; i < 7; i++) {
+    packedDays |= (weekDays[i] << i);
+  }
+  return packedDays;
+}
+
+function unpackDays(packedDays, weekDays) {
+  for (let i = 0; i < 7; i++) {
+    weekDays[i] = ((packedDays >> i) & 1) > 0;
+  }
+}
+
 function valueChanged(iD) {
   switch (iD) {
     case 'NEXT':
@@ -52,16 +66,48 @@ function valueChanged(iD) {
         "color": colorValue
       });
       break;
-    case 'dawnCheck':
-      var doDawn = $('#dawnCheck')[0].checked;
+    case 'dawnMonday':
+    case 'dawnTuesday':
+    case 'dawnWednesday':
+    case 'dawnThursday':
+    case 'dawnFriday':
+    case 'dawnSaturday':
+    case 'dawnSunday':
+      var dawn_days = new Array(7).fill(false);
+      dawn_days[0] = document.getElementById('dawnMonday').checked;
+      dawn_days[1] = document.getElementById('dawnTuesday').checked;
+      dawn_days[2] = document.getElementById('dawnWednesday').checked;
+      dawn_days[3] = document.getElementById('dawnThursday').checked;
+      dawn_days[4] = document.getElementById('dawnFriday').checked;
+      dawn_days[5] = document.getElementById('dawnSaturday').checked;
+      dawn_days[6] = document.getElementById('dawnSunday').checked;
+      var doDawn = packDays(dawn_days);
+
       setTimeValues({
         "do_dawn": doDawn
       });
-    case 'duskCheck':
-      var doDusk = $('#duskCheck')[0].checked;
+      break;
+    case 'duskMonday':
+    case 'duskTuesday':
+    case 'duskWednesday':
+    case 'duskThursday':
+    case 'duskFriday':
+    case 'duskSaturday':
+    case 'duskSunday':
+      var dusk_days = new Array(7).fill(false);
+      dusk_days[0] = document.getElementById('duskMonday').checked;
+      dusk_days[1] = document.getElementById('duskTuesday').checked;
+      dusk_days[2] = document.getElementById('duskWednesday').checked;
+      dusk_days[3] = document.getElementById('duskThursday').checked;
+      dusk_days[4] = document.getElementById('duskFriday').checked;
+      dusk_days[5] = document.getElementById('duskSaturday').checked;
+      dusk_days[6] = document.getElementById('duskSunday').checked;
+      var doDusk = packDays(dusk_days);
+
       setTimeValues({
         "do_dusk": doDusk
       });
+      break;
     default:
       var theme = parseInt(iD);
       if (!isNaN(theme))
@@ -227,8 +273,26 @@ function getTimeCall() {
     document.getElementById('DAWN_SET').value = parseInt(myActuals.hour_dawn).toString().padStart(2, '0') + ":" + parseInt(myActuals.minute_dawn).toString().padStart(2, '0');
     document.getElementById('DUSK_SET').value = parseInt(myActuals.hour_dusk).toString().padStart(2, '0') + ":" + parseInt(myActuals.minute_dusk).toString().padStart(2, '0');
 
-    document.getElementById('dawnCheck').checked = Boolean(myActuals.do_dawn);
-    document.getElementById('duskCheck').checked = Boolean(myActuals.do_dusk);
+    var dawn_days = new Array(7).fill(false);
+    unpackDays(parseInt(myActuals.do_dawn), dawn_days);
+    document.getElementById('dawnMonday').checked = dawn_days[0];
+    document.getElementById('dawnTuesday').checked = dawn_days[1];
+    document.getElementById('dawnWednesday').checked = dawn_days[2];
+    document.getElementById('dawnThursday').checked = dawn_days[3];
+    document.getElementById('dawnFriday').checked = dawn_days[4];
+    document.getElementById('dawnSaturday').checked = dawn_days[5];
+    document.getElementById('dawnSunday').checked = dawn_days[6];
+
+    var dusk_days = new Array(7).fill(false);
+    unpackDays(parseInt(myActuals.do_dusk), dusk_days);
+    document.getElementById('duskMonday').checked = dusk_days[0];
+    document.getElementById('duskTuesday').checked = dusk_days[1];
+    document.getElementById('duskWednesday').checked = dusk_days[2];
+    document.getElementById('duskThursday').checked = dusk_days[3];
+    document.getElementById('duskFriday').checked = dusk_days[4];
+    document.getElementById('duskSaturday').checked = dusk_days[5];
+    document.getElementById('duskSunday').checked = dusk_days[6];
+
     document.getElementById('colorpicker').value = "#" + parseInt(myActuals.color).toString(16).padStart(6, '0');
   })
 }
