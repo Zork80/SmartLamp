@@ -120,13 +120,13 @@ const char* ntpServer = "de.pool.ntp.org";
 const long  gmtOffset_sec = 3600;
 const int   daylightOffset_sec = 3600;
 
-bool dawnDays[7] = {false, true, true, false, true, false, false};
+bool dawnDays[7] = {true, true, true, true, true, false, false};
 int dawn_hour = 6;
 int dawn_minute = 0;
 int light_interval = 60;
 int light_interval_s = light_interval * 60 ;  
   
-bool duskDays[7] = {false, true, true, false, true, false, false};
+bool duskDays[7] = {true, true, true, true, true, true, true};
 int dusk_hour = 22;
 int dusk_minute = 0;
 
@@ -337,14 +337,14 @@ void ThemeRainbow()
     rb[i] = Wheel((int)(counter + i * offset) % 256);
   }
 
-  int j = 0;
+  int j = 0;  
   for (int i = STAGES - 1; i >= 0; i--)
   {
-    //for(int j = 0; j < PIXELSPERSTAGE; j++)
-    //{
-    //  _leds[i*PIXELSPERSTAGE + j] = rb[i];
-    //}
-    _leds(j++ * PIXELSPERSTAGE, PIXELSPERSTAGE).fill_solid(rb[i]);
+    for(int j = 0; j < PIXELSPERSTAGE; j++)
+    {
+      _leds[i*PIXELSPERSTAGE + j] = rb[i];
+    }
+    //_leds(i++ * PIXELSPERSTAGE, i * PIXELSPERSTAGE - 1).fill_solid(rb[i]);
   }
 }
 
@@ -915,7 +915,7 @@ void setLed(byte ledTheme) {
         if(_ledTheme != neutralTheme)
         {
           _ledTheme = neutralTheme;
-          saveState();
+          //saveState();
         }
         ledTheme = dawnTheme;
       }
@@ -928,7 +928,7 @@ void setLed(byte ledTheme) {
         if(_ledTheme != neutralTheme)
         {
           _ledTheme = neutralTheme;
-          saveState();
+          //saveState();
         }
         ledTheme = duskTheme;
       }
