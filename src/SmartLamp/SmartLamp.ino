@@ -605,26 +605,28 @@ void setup()
 }
 
 byte timeCounter = 0;
+unsigned long previousMillis = 0;
+unsigned long interval = 30000;
 void loop()
 {
-    int wifi_retry = 0;
-    while(WiFi.status() != WL_CONNECTED && wifi_retry < 5) {
-      wifi_retry++;
+    unsigned long currentMillis = millis();
+    //int wifi_retry = 0;
+    while(WiFi.status() != WL_CONNECTED && (currentMillis - previousMillis >= interval)) {
+      //wifi_retry++;
       delay(100);
       #ifdef DEBUG
       Serial.println("WiFi not connected. Try to reconnect.");
       #endif
       WiFi.disconnect();
-      WiFi.mode(WIFI_OFF);
-      WiFi.mode(WIFI_STA);
-      WiFi.begin(ssid, password);
+      WiFi.reconnect();
+      previousMillis = currentMillis;
     }
-    if(WiFi.status() != WL_CONNECTED && wifi_retry >= 5) {
-      #ifdef DEBUG
-      Serial.println("Reboot");
-      #endif
-      ESP.restart();
-    }
+    //if(WiFi.status() != WL_CONNECTED && wifi_retry >= 5) {
+    //  #ifdef DEBUG
+    //  Serial.println("Reboot");
+    //  #endif
+    //  ESP.restart();
+    //}
     
     ArduinoOTA.handle();
   
