@@ -1,10 +1,10 @@
-#define DEBUG
+//#define DEBUG
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 
-#include "ESPAsyncWebServer.h"
+#include "ESPAsyncWebSrv.h"
 #include <FastLED.h>
 #include "time.h"
 #include "AsyncJson.h"
@@ -12,6 +12,8 @@
 
 #include <EEPROM.h>
 #include "SPIFFS.h"
+
+#include "net_config.h"
 
 //#define ROOFLIGHT
 #define ISSMARTLAMP
@@ -76,6 +78,20 @@ CRGBArray<NUMPIXELS> _leds;
 //Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, SIGNALPIN, NEO_GRB + NEO_KHZ800);
 #endif
 
+// Add your networks credentials here
+#ifndef SSID
+  #define SSID "ssid"
+#endif
+
+#ifndef PASSWORD
+  #define PASSWORD "password"
+#endif
+
+// Set web server port number to 80
+#ifndef PORT
+  #define PORT 80
+#endif
+
 
 CRGB off = CRGB::Black;
 CRGB red = CRGB(255, 0, 0);
@@ -102,6 +118,10 @@ CRGB waveColorAct = CRGB(0,  20,  117);
 
 CRGB pickedColor = CRGB(0, 0, 255);
 
+CRGBPalette16 gCurrentPalette;
+CRGBPalette16 gTargetPalette;
+
+
 int counter = 0;
 
 #ifdef HASPIR
@@ -109,12 +129,7 @@ unsigned long lastActivationTime;
 unsigned long activationDuration = 180;
 #endif
 
-// Add your networks credentials here
-const char* ssid = "SID";
-const char* password = "Password";
-
-// Set web server port number to 80
-AsyncWebServer server(80);
+AsyncWebServer server(PORT);
 
 const char* ntpServer = "de.pool.ntp.org";
 const long  gmtOffset_sec = 3600;
@@ -261,6 +276,12 @@ void ThemeDawn()
     #endif
   }
 }
+
+void ThemeTwinkle()
+{
+  Twinkles();
+}
+
 void ThemeDusk()
 {
   if (duskSecondsGone > 0 && duskSecondsGone < light_interval_s)
@@ -378,22 +399,16 @@ void ThemeAlert()
 const byte themeCount = 11;
 
 ThemeEntry themes[themeCount] =
-{
-  { ThemeOff,             false, 
+{  
   #ifdef ROOFLIGHT
-                                 "Spot", "Strahler"
+  { ThemeOff,             false, "Spot", "Strahler" },
+  { ThemeYellowPlusSpot,  false, "Yellow + Spot", "Gelb + Strahler" },
   #else
-                                 "Off", "Aus"
+  { ThemeOff,             false, "Off", "Aus" },
+  { ThemeTwinkle,         true,  "Twinkle", "Glitzern" },
   #endif
-                                              },
+                                                
   { ThemeYellow,          false, "Yellow", "Gelb" },
-  { 
-  #ifdef ROOFLIGHT
-    ThemeYellowPlusSpot,  false, "Yellow + Spot", "Gelb + Strahler"
-  #else
-    ThemeAlert,           true, "Alert", "Alarm"
-  #endif
-                                              },
   { ThemeNightLight,      true,  "Night Light", "Nachtlicht" },
   { ThemeYellowWarmWhite, false, "Bright", "Hell" },
   { ThemeFire,            true,  "Fire", "Feuer" },
@@ -443,6 +458,7 @@ void setup()
   #ifdef ISSMARTLAMP
   FastLED.addLeds<WS2811, SIGNALPIN, GRB>(_leds, NUMPIXELS);
   #endif
+  chooseNextColorPalette(gTargetPalette);
 
   if (!EEPROM.begin(512)) // size in Byte
   {
@@ -461,11 +477,11 @@ void setup()
   // Connect to Wi-Fi network with SSID and password
   #ifdef DEBUG
   Serial.print("Connecting to ");
-  Serial.println(ssid);
+  Serial.println(SSID);
   #endif
   
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  WiFi.begin(SSID, PASSWORD);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
     #ifdef DEBUG
     Serial.println("Connection Failed! Rebooting...");
