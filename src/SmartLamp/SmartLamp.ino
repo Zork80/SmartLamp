@@ -37,7 +37,7 @@
 
 #ifdef HASSPOTLIGHT
   bool isSpotlightOn = true;
-  bool isLedOn = false;
+  bool isLedOn = true;
 #else
   bool isLedOn = true;
 #endif
@@ -155,7 +155,7 @@ bool firstAfterSwitch = true;
 int dawnTheme = 7;
 int duskTheme = 8;
 #ifdef HASPIR
-int neutralTheme = 5;
+int neutralTheme = 4;
 #else
 int neutralTheme = 0;
 #endif
@@ -401,22 +401,25 @@ const byte themeCount = 11;
 ThemeEntry themes[themeCount] =
 {  
   #ifdef ROOFLIGHT
-  { ThemeOff,             false, "Spot", "Strahler" },
-  { ThemeYellowPlusSpot,  false, "Yellow + Spot", "Gelb + Strahler" },
+  { ThemeYellowPlusSpot,  false, "Yellow + Spot", "Gelb + Strahler" },    // 0
+  //{ ThemeOff,             false, "Spot", "Strahler" },
+  //{ ThemeYellowPlusSpot,  false, "Yellow + Spot", "Gelb + Strahler" },
   #else
-  { ThemeOff,             false, "Off", "Aus" },
-  { ThemeTwinkle,         true,  "Twinkle", "Glitzern" },
+  { ThemeOff,             false, "Off", "Aus" },                          // 0
+  //{ ThemeOff,             false, "Off", "Aus" },
+  //{ ThemeTwinkle,         true,  "Twinkle", "Glitzern" },
   #endif
                                                 
-  { ThemeYellow,          false, "Yellow", "Gelb" },
-  { ThemeNightLight,      true,  "Night Light", "Nachtlicht" },
-  { ThemeYellowWarmWhite, false, "Bright", "Hell" },
-  { ThemeFire,            true,  "Fire", "Feuer" },
-  { ThemePickedColor,     false, "Selection", "Wahl" },
-  { ThemeDawn,            true,  "Dawn", "Morgendämmerung" },
-  { ThemeDusk,            true,  "Dusk", "Abenddämmerung" },
-  { ThemeWave,            true,  "Wave", "Welle" },
-  { ThemeRainbow,         true,  "Rainbow", "Regenbogen" }
+  { ThemeYellow,          false, "Yellow", "Gelb" },                      // 1
+  { ThemeYellowWarmWhite, false, "Bright", "Hell" },                      // 2
+  { ThemePickedColor,     false, "Selection", "Wahl" },                   // 3
+  { ThemeNightLight,      true,  "Night Light", "Nachtlicht" },           // 4  
+  { ThemeTwinkle,         true,  "Twinkle", "Glitzern" },                 // 5
+  { ThemeFire,            true,  "Fire", "Feuer" },                       // 6
+  { ThemeDawn,            true,  "Dawn", "Morgendämmerung" },             // 7
+  { ThemeDusk,            true,  "Dusk", "Abenddämmerung" },              // 8
+  { ThemeWave,            true,  "Wave", "Welle" },                       // 9
+  { ThemeRainbow,         true,  "Rainbow", "Regenbogen" }                // 10
 };
 
 // https://randomnerdtutorials.com/esp32-ntp-timezones-daylight-saving/
@@ -431,11 +434,25 @@ void setup()
   pinMode(SIGNALPIN, OUTPUT);
 
   #ifdef ROOFLIGHT
+  FastLED.addLeds<WS2811, SIGNALPIN, BRG>(_leds, NUMPIXELS);
+  #endif
+  #ifdef ISSMARTLAMP
+  FastLED.addLeds<WS2811, SIGNALPIN, GRB>(_leds, NUMPIXELS);
+  #endif
+  chooseNextColorPalette(gTargetPalette);
+
+  #ifdef ROOFLIGHT
   pinMode(RELAYPIN, OUTPUT);
-  if(!isLedOn)
+  //Relais entsprechend isLedOn schalten
+  if (isLedOn) 
+  {
     digitalWrite(RELAYPIN , LOW);
+  }
   else 
-    digitalWrite(RELAYPIN , HIGH);
+  {
+    digitalWrite(RELAYPIN, HIGH);    
+  }    
+  delay(20);
   #endif
 
   #ifdef DEBUG
@@ -452,13 +469,7 @@ void setup()
     #endif   
   #endif
 
-  #ifdef ROOFLIGHT
-  FastLED.addLeds<WS2811, SIGNALPIN, BRG>(_leds, NUMPIXELS);
-  #endif
-  #ifdef ISSMARTLAMP
-  FastLED.addLeds<WS2811, SIGNALPIN, GRB>(_leds, NUMPIXELS);
-  #endif
-  chooseNextColorPalette(gTargetPalette);
+  setLed(_ledTheme);
 
   if (!EEPROM.begin(512)) // size in Byte
   {
@@ -495,7 +506,7 @@ void setup()
 
   // Hostname defaults to esp3232-[MAC]
 #ifdef ISSMARTLAMP
-  ArduinoOTA.setHostname("SmartLamp");
+  ArduinoOTA.setHostname("SmartLampFlorian");
 #else
   ArduinoOTA.setHostname("SmartRoofLamp");
 #endif
