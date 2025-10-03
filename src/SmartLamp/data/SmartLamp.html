@@ -1,0 +1,182 @@
+<!DOCTYPE html><html>
+    <head>
+
+    <script language="JavaScript" type="text/javascript" src="./SmartLamp.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="./jquery-3.5.1.min.js"></script>
+    <script src="./bootstrap.bundle.min.js"></script> 
+    <link rel="stylesheet" href="./bootstrap.min.css" media="screen">
+    <link rel="stylesheet" href="./SmartLamp.css">
+
+    <!--
+    <script language="JavaScript" type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    -->
+
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">    
+    <!--link rel="icon" href="data:,"-->
+      <style>
+        h1 {text-align: center;}
+        p {text-align: center;}
+      </style>
+    </head>
+
+    <body onload="onload()">
+     <h1>
+      <Span class="lang de">Intelligente Lampe</Span>
+      <Span class="lang en">Smart Lamp</Span>
+     </h1>
+     <div class="container">
+     <p>
+      <label class=myLabel id="_ledTheme" style="margin-left:1px;width:120px;">
+        <Span class="lang de">LED Thema</Span>
+        <Span class="lang en">LED Theme</Span>
+      </label>   
+     </p>
+     <!-- id 7 and 8 are reserved for dawn and dusk -->
+     <div class="row justify-content-center">  
+       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="NEXT" onclick="valueChanged(this.id)">
+         <Span class="lang de">Vor</Span>
+         <Span class="lang en">Next</Span>
+       </button></div>
+       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="PREV" onclick="valueChanged(this.id)">
+        <Span class="lang de">Zurück</Span>
+        <Span class="lang en">Prev</Span>
+       </button></div>
+     </div>
+     <p></p>
+     <div class="row">   
+       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="0" onclick="valueChanged(this.id)">
+        <Span>Theme 0</Span>
+       </button></div>
+       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="1" onclick="valueChanged(this.id)">
+        <Span>Theme 1</Span>
+       </button></div>
+       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="2" onclick="valueChanged(this.id)">
+        <Span>Theme 2</Span>
+       </button></div>
+       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="4" onclick="valueChanged(this.id)">
+        <Span>Theme 4</Span>
+       </button></div>
+       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="5" onclick="valueChanged(this.id)">
+        <Span>Theme 5</Span>
+       </button></div>
+       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="6" onclick="valueChanged(this.id)">
+        <Span>Theme 6</Span>
+       </button></div>
+       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="9" onclick="valueChanged(this.id)">
+        <Span>Theme 9</Span>
+       </button></div>
+       <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" id="10" onclick="valueChanged(this.id)">
+        <Span>Theme 10</Span>
+       </button></div>
+      </div>
+     
+      <div class="input-group mb-4">
+        <input type="color" class="form-control" id="colorpicker" onchange="valueChanged(this.id)" value="#0000ff">
+        <div class="input-group-append">
+          <button class="btn btn-success btn-lg" type="button" id="3" onclick="valueChanged(this.id)">
+            <Span>Theme 3</Span>
+          </button>
+        </div>
+      </div>
+     <form>
+      <div class="col-sm-12">
+        <div class="form-group">
+        <label class="col-sm-4">
+          <Span class="lang de">Morgendämmerung</Span>
+          <Span class="lang en">Dawn</Span>
+        </label>
+        <div class="col-sm-1">
+          <input type="time" id="DAWN_SET" onblur="valueChanged(this.id)" onclick="javascript:textSelector(this)"/>
+        </div>
+        </div>
+        <div class="form-group">
+          <label class="col-sm-4">Wochentage:</label>
+          <div class="col-sm-8">
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnMonday" onchange="valueChanged(this.id)" value="">
+              <Span class="lang de">Montag</Span>
+              <Span class="lang en">Monday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnTuesday" onchange="valueChanged(this.id)" value=""> 
+              <Span class="lang de">Dienstag</Span>
+              <Span class="lang en">Tuesday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnWednesday" onchange="valueChanged(this.id)" value=""> 
+              <Span class="lang de">Mittwoch</Span>
+              <Span class="lang en">Wednesday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnThursday" onchange="valueChanged(this.id)" value="">
+              <Span class="lang de">Donnerstag</Span>
+              <Span class="lang en">Thursday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnFriday" onchange="valueChanged(this.id)" value="">
+              <Span class="lang de">Freitag</Span>
+              <Span class="lang en">Friday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnSaturday" onchange="valueChanged(this.id)" value="">
+              <Span class="lang de">Samstag</Span>
+              <Span class="lang en">Saturday</Span>
+            </label>
+            <label class="col-sm-4"></label><input type="checkbox" id="dawnSunday" onchange="valueChanged(this.id)" value="">
+              <Span class="lang de">Sonntag</Span>
+              <Span class="lang en">Sunday</Span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-12">
+      <div class="form-group">
+        <label class="col-sm-4" >
+          <span class="lang de">Abenddämmerung</span>
+          <span class="lang en">Dusk</span></label>
+        <div class="col-sm-1">
+          <input type="time" id="DUSK_SET" onblur="valueChanged(this.id)" onclick="javascript:textSelector(this)"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-4">Wochentage:</label>
+        <div class="col-sm-8">
+          <label class="col-sm-4"></label><input type="checkbox" id="duskMonday" onchange="valueChanged(this.id)" value="">
+          <Span class="lang de">Montag</Span>
+          <Span class="lang en">Monday</Span>
+          </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskTuesday" onchange="valueChanged(this.id)" value=""> 
+          <Span class="lang de">Dienstag</Span>
+          <Span class="lang en">Tuesday</Span>
+        </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskWednesday" onchange="valueChanged(this.id)" value=""> 
+          <Span class="lang de">Mittwoch</Span>
+          <Span class="lang en">Wednesday</Span>
+        </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskThursday" onchange="valueChanged(this.id)" value="">
+          <Span class="lang de">Donnerstag</Span>
+          <Span class="lang en">Thursday</Span>
+        </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskFriday" onchange="valueChanged(this.id)" value="">
+          <Span class="lang de">Freitag</Span>
+          <Span class="lang en">Friday</Span>
+        </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskSaturday" onchange="valueChanged(this.id)" value="">
+          <Span class="lang de">Samstag</Span>
+          <Span class="lang en">Saturday</Span>
+        </label>
+        <label class="col-sm-4"></label><input type="checkbox" id="duskSunday" onchange="valueChanged(this.id)" value="">
+          <Span class="lang de">Sonntag</Span>
+          <Span class="lang en">Sunday</Span>
+        </label>
+        </div>
+      </div>
+      </div>
+     </form>
+     <div class="row">
+      <div class="col-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" onclick="onClickOk()"><span class="lang de">Übernehmen</span><span class="lang en">Apply</span></button></div>
+    </div>
+    <p>
+      <div class="label" id="DEBUG">
+        <span></span>
+      </div>
+    <p>
+    </div>
+    </body></html>

@@ -1,0 +1,8 @@
+/* Im Style werden alle .lang-Elemente erstmal ausgeblendet. */
+.lang {
+    display: none;
+}
+/* und die Aktuelle Sprache wird eingeblendet */
+#lang-de .de,#lang-en .en {
+    display: inline-block;
+}
