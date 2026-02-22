@@ -21,7 +21,7 @@ This project is based on PlatformIO.
 * 3D-printed parts
 * ESP32 Dev board
 * WS2812 RGB LED Ring (12 oder 24 LEDs)
-* 5x M4 x 6 mm screws
+* 5x M2 x 6 mm screws
 * 3x wires to connect the LED ring (soldering on the ring, Dupont connectors on the ESP32)
 * 1 USB-Cable
 
