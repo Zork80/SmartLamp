@@ -1,6 +1,0 @@
-{
-    "board": "esp32:esp32:esp32",
-    "configuration": "PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,DebugLevel=none",
-    "sketch": "src/SmartLamp/SmartLamp.ino",
-    "port": "192.168.178.61"
-}

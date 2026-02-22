@@ -1,3 +1,19 @@
+#ifndef TWINKLES_H
+#define TWINKLES_H
+
+#include <FastLED.h>
+
+// Globale Variablen aus main.cpp bekannt machen
+extern CRGBPalette16 gCurrentPalette;
+extern CRGBPalette16 gTargetPalette;
+
+// Vorwärtsdeklarationen der Funktionen
+void chooseNextColorPalette( CRGBPalette16& pal);
+void drawTwinkles( CRGBSet& L);
+CRGB computeOneTwinkle( uint32_t ms, uint8_t salt);
+uint8_t attackDecayWave8( uint8_t i);
+void coolLikeIncandescent( CRGB& c, uint8_t phase);
+
 // Overall twinkle speed.
 // 0 (VERY slow) to 8 (VERY fast).  
 // 4, 5, and 6 are recommended, default is 4.
@@ -34,8 +50,8 @@ CRGB gBackgroundColor = CRGB::Black;
 
 
 
-
-void Twinkles()
+// Geändert: Nimmt nun das LED-Array als Parameter entgegen
+void Twinkles(CRGBSet& L)
 {
   EVERY_N_SECONDS( SECONDS_PER_PALETTE ) { 
     chooseNextColorPalette( gTargetPalette ); 
@@ -45,7 +61,7 @@ void Twinkles()
     nblendPaletteTowardPalette( gCurrentPalette, gTargetPalette, 12);
   }
 
-  drawTwinkles(_leds);
+  drawTwinkles(L);
 }
 
 //  This function loops over each pixel, calculates the 
@@ -290,3 +306,5 @@ void chooseNextColorPalette( CRGBPalette16& pal)
 
   pal = *(ActivePaletteList[whichPalette]);
 }
+
+#endif

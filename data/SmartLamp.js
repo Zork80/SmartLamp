@@ -1,5 +1,6 @@
 var myOldActuals = 0;
 var themes = null;
+var oldMqttServer = "";
 
 function onload() {
   switchLanguage();
@@ -12,6 +13,7 @@ function onload() {
     lang = 'en';
   }
   readConfig(lang);
+  readMqttConfig();
 
   getTimeCall(makeTheCall, 1000);
   makeTheCall();
@@ -64,6 +66,12 @@ function valueChanged(iD) {
       var colorValue = parseInt($('#colorpicker')[0].value.replace(/^#/, ''), 16);
       setTimeValues({
         "color": colorValue
+      });
+      break;
+    case 'brightness':
+      var brightnessValue = parseInt($('#brightness').val());
+      setTimeValues({
+        "brightness": brightnessValue
       });
       break;
     case 'dawnMonday':
@@ -139,6 +147,62 @@ function onClickOk() {
     getTimeCall();
 }
 
+function onClickSaveAndReboot() {
+  var hostnameValue = $('#hostname').val();
+  var ssidValue = $('#ssid').val();
+  var passwordValue = $('#password').val();
+  var mqttServerValue = $('#mqttServer').val();
+
+  var settings = {};
+  if (hostnameValue && hostnameValue !== myOldActuals.hostname) {
+    settings.hostname = hostnameValue;
+  }
+  if (ssidValue && ssidValue !== myOldActuals.ssid) {
+    settings.ssid = ssidValue;
+  }
+  // Only send password if it has been entered
+  if (passwordValue) {
+    settings.password = passwordValue;
+  }
+
+  var mqttChanged = (mqttServerValue && mqttServerValue !== oldMqttServer);
+  var networkChanged = (Object.keys(settings).length > 0);
+
+  if (networkChanged || mqttChanged) {
+    var requests = [];
+
+    if (mqttChanged) {
+      requests.push($.ajax({
+        method: "POST",
+        url: 'mqtt_config',
+        data: JSON.stringify({ "mqttServer": mqttServerValue }),
+        contentType: "application/json;",
+        dataType: "json"
+      }));
+    }
+
+    if (networkChanged) {
+      requests.push($.ajax({
+        method: "POST",
+        url: 'rest',
+        data: JSON.stringify(settings),
+        contentType: "application/json;",
+        dataType: "json"
+      }));
+    }
+
+    $.when.apply($, requests).then(function() {
+        alert("Settings saved. The device will now reboot to apply changes.");
+        setTimeout(function() { $.get("/reboot"); }, 1000);
+    }, function() {
+        alert("Failed to save settings.");
+    });
+
+  } else {
+      alert("No new settings to save.");
+  }
+}
+
 function setTimeValues(cdo) {
   $.ajaxSetup({
     async: true,
@@ -192,9 +256,16 @@ function readConfig(lang) {
           element.innerHTML = themes[i];
       }
     };
-
-    setTimeout(makeTheCall, 200);
   })
+}
+
+function readMqttConfig() {
+  $.get("mqtt_config", function(data) {
+    if(data && data.mqttServer) {
+      $("#mqttServer").val(data.mqttServer);
+      oldMqttServer = data.mqttServer;
+    }
+  }, "json");
 }
 
 function makeTheCall() {
@@ -220,12 +291,13 @@ function makeTheCall() {
           document.getElementById('_ledTheme').innerHTML = "LED Thema " + parseInt(myActuals.theme);
         else
           document.getElementById('_ledTheme').innerHTML = "LED Thema " + themes[parseInt(myActuals.theme)];
-        _ledTheme = myActuals.theme;
       }
       myOldActuals = myActuals;
     };
 
     setTimeout(makeTheCall, 200);
+  }).fail(function() {
+    setTimeout(makeTheCall, 2000);
   })
 }
 
@@ -294,6 +366,13 @@ function getTimeCall() {
     document.getElementById('duskSunday').checked = dusk_days[6];
 
     document.getElementById('colorpicker').value = "#" + parseInt(myActuals.color).toString(16).padStart(6, '0');
+
+    if (myActuals.brightness !== undefined) {
+      document.getElementById('brightness').value = myActuals.brightness;
+    }
+
+    document.getElementById('hostname').value = myActuals.hostname;
+    document.getElementById('ssid').value = myActuals.ssid;
   })
 }
 
@@ -313,4 +392,19 @@ function switchLanguage() {
     e.preventDefault();
   $("body").attr( "id",'lang-'+$(this).attr('lang'));
   });
+}
+
+function togglePasswordVisibility() {
+  var x = document.getElementById("password");
+  var iconShow = document.getElementById("iconShow");
+  var iconHide = document.getElementById("iconHide");
+  if (x.type === "password") {
+    x.type = "text";
+    iconShow.style.display = "none";
+    iconHide.style.display = "inline";
+  } else {
+    x.type = "password";
+    iconShow.style.display = "inline";
+    iconHide.style.display = "none";
+  }
 }
