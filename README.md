@@ -1,45 +1,45 @@
 # SmartLamp
 
-Dies ist das Projekt für die SmartLamp Steuerung.
+This is the project for the SmartLamp controller.
 
-## Konfiguration
+## Configuration
 
-Falls keine WLAN-Zugangsdaten hinterlegt sind, startet die SmartLamp automatisch im Access-Point-Modus (AP-Modus).
-Verbinde dich mit dem WLAN der Lampe (**SSID:** `SmartLampConfig`, **Passwort:** `12345678`) und konfiguriere SSID und Passwort bequem über die Weboberfläche.
+If no Wi-Fi credentials are saved, the SmartLamp will automatically start in Access Point (AP) mode.
+Connect to the lamp's Wi-Fi network (**SSID:** `SmartLampConfig`, **Password:** `12345678`) and configure your SSID and password conveniently via the web interface.
 
 ## Installation
 
-Dieses Projekt basiert auf PlatformIO.
+This project is based on PlatformIO.
 
-1. Öffne das Projekt in einer IDE mit PlatformIO-Unterstützung (z. B. VS Code).
-2. Verbinde den Mikrocontroller per USB.
-3. Führe den Befehl `Upload` aus, um die Firmware zu kompilieren und zu flashen.
-4. Führe den Befehl `Upload Filesystem Image` aus, um die Webseiten-Dateien auf den Mikrocontroller zu laden.
+1. Open the project in an IDE with PlatformIO support (e.g., VS Code).
+2. Connect the microcontroller via USB.
+3. Execute the `Upload` command to compile and flash the firmware.
+4. Execute the `Upload Filesystem Image` command to upload the website files to the microcontroller.
 
-## Benötigte Teile
+## Required Parts
 
-* 3D-gedruckte Teile
-* ESP32 Dev Board
+* 3D-printed parts
+* ESP32 Dev board
 * WS2812 RGB LED Ring (12 oder 24 LEDs)
-* 5x M4 x 6 mm Schrauben
-* 3x Kabel zum Anschluss des LED-Rings (Löten am Ring, Dupont-Stecker am ESP32)
-* 1 USB-Kabel
+* 5x M4 x 6 mm screws
+* 3x wires to connect the LED ring (soldering on the ring, Dupont connectors on the ESP32)
+* 1 USB-Cable
 
-## 3D-Druck
+## 3D Printing
 
-Die Dateien für den 3D-Druck können hier heruntergeladen werden: [SmartLamp auf Printables](https://www.printables.com/model/237208-smartlamp)
+The files for 3D printing can be downloaded here: SmartLamp on Printables
 
 ## Home Assistant Integration
 
-Die Firmware unterstützt MQTT und die automatische Erkennung durch Home Assistant (MQTT Discovery).
+The firmware supports MQTT and automatic detection by Home Assistant (MQTT Discovery).
 
-**Voraussetzungen:**
-1.  Ein laufender MQTT-Broker (z.B. das "Mosquitto broker" Add-on in Home Assistant).
-2.  Die MQTT-Integration muss in Home Assistant konfiguriert sein.
+**Prerequisites:**
+1.  A running MQTT broker (e.g., the "Mosquitto broker" add-on in Home Assistant).
+2.  The MQTT integration must be configured in Home Assistant.
 
-**Einrichtung:**
-1.  Trage die IP-Adresse deines MQTT-Brokers in der Weboberfläche der SmartLamp unter "Network & Device Settings" ein.
-2.  Speichere die Einstellung und starte die Lampe neu.
-3.  Die Lampe sollte nun automatisch als neues Gerät unter **Einstellungen -> Geräte & Dienste -> MQTT** in Home Assistant erscheinen und ist sofort steuerbar.
+**Setup:**
+1.  Enter the IP address of your MQTT broker in the SmartLamp's web interface under "Network & Device Settings".
+2.  Save the settings and restart the lamp.
+3.  The lamp should now automatically appear as a new device under **Settings -> Devices & Services -> MQTT** in Home Assistant and is immediately controllable.
 
-Es ist keine manuelle Konfiguration in der `configuration.yaml` notwendig.
+No manual configuration in `configuration.yaml` is necessary.
