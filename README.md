@@ -27,7 +27,7 @@ This project is based on PlatformIO.
 
 ## 3D Printing
 
-The files for 3D printing can be downloaded here: SmartLamp on Printables
+The files for 3D printing can be downloaded here: [SmartLamp on Printables](https://www.printables.com/model/237208-smartlamp)
 
 ## Home Assistant Integration
 
