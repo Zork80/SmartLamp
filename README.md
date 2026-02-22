@@ -42,4 +42,4 @@ Die Firmware unterstützt MQTT und die automatische Erkennung durch Home Assista
 2.  Speichere die Einstellung und starte die Lampe neu.
 3.  Die Lampe sollte nun automatisch als neues Gerät unter **Einstellungen -> Geräte & Dienste -> MQTT** in Home Assistant erscheinen und ist sofort steuerbar.
 
-Es ist keine manuelle Konfiguration in der `configuration.yaml` mehr notwendig.
+Es ist keine manuelle Konfiguration in der `configuration.yaml` notwendig.
