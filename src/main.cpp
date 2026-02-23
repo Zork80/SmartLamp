@@ -243,18 +243,22 @@ void loop()
     if (mySwitch.available()) {
       unsigned long receiveTimeAct = millis();
       if (receiveTime <= 0 || receiveTimeAct - receiveTime > 500) {
-        byte ledTheme = lampState.ledTheme;
+        byte currentThemeIndex = lampState.ledTheme;
         receiveTime = receiveTimeAct;
         
         if (mySwitch.getReceivedValue() == onValue) {
-          ledTheme++;
-          if (ledTheme == lampState.dawnTheme) ledTheme = lampState.duskTheme + 1;
-          if (ledTheme >= themeCount) ledTheme = 1;
-          setLedTheme(ledTheme);
+          currentThemeIndex++;
+          // Skip Dawn and Dusk themes when cycling with RC switch
+          if (currentThemeIndex == lampState.dawnTheme) currentThemeIndex = lampState.duskTheme + 1;
+          if (currentThemeIndex >= themeCount) currentThemeIndex = 1; // Start from 1 to skip "Off"
+          setLedTheme((Theme)currentThemeIndex);
           TRACE("RC-Switch: on");
         } else if (mySwitch.getReceivedValue() == offValue) {      
-          ledTheme = 0;
-          setLedTheme(ledTheme);
+          #ifdef ROOFLIGHT
+          setLedTheme(Theme_YellowPlusSpot); // "Off" for rooflight is a specific theme
+          #else
+          setLedTheme(Theme_Off);
+          #endif
           TRACE("RC-Switch: off");
         } 
         saveState();

@@ -34,7 +34,7 @@ void ThemeYellowPlusSpot() {
   #endif    
 }
 
-void ThemeYellow() { fill_solid(_leds, NUMPIXELS, yellow); }
+void ThemeYellow() { fill_solid(_leds, NUMPIXELS, yellow2); }
 void ThemeYellowWarmWhite() { fill_solid(_leds, NUMPIXELS, warmWhite); }
 void ThemePickedColor() { fill_solid(_leds, NUMPIXELS, lampState.pickedColor); }
 
@@ -59,7 +59,7 @@ void ThemeNightLight() {
 
 void ThemeDawn() {
   if (lampState.dawnSecondsGone > 0 && lampState.dawnSecondsGone < lampState.light_interval_s) {
-    lampState.dim = themes[7].DefaultDim;
+    lampState.dim = themes[Theme_Dawn].DefaultDim;
     float dimFactor = lampState.light_interval_s / 255.0;
     byte dim = 255 - constrain(lampState.dawnSecondsGone / dimFactor, 0, 255);
     _outputString = String("dawnSecondsGone = ") + String(lampState.dawnSecondsGone) + String("; Dim = ") + String(dim);
@@ -69,7 +69,7 @@ void ThemeDawn() {
   } else {
     fill_solid(_leds, NUMPIXELS, off);
     #ifdef HASPIR     
-    if(lampState.ledTheme != 5) { lampState.ledTheme = 5; saveState(); }
+    if(lampState.ledTheme != lampState.neutralTheme) { setLedTheme(lampState.neutralTheme); saveState(); }
     #endif
   }
 }
@@ -84,7 +84,7 @@ void ThemeTwinkle() {
 
 void ThemeDusk() {
   if (lampState.duskSecondsGone > 0 && lampState.duskSecondsGone < lampState.light_interval_s) {
-    lampState.dim = themes[8].DefaultDim;
+    lampState.dim = themes[Theme_Dusk].DefaultDim;
     float dimFactor = 255.0 / lampState.light_interval_s;
     byte dim = constrain(lampState.duskSecondsGone * dimFactor, 0, 255);
     _outputString = String("duskSecondsGone = ") + String(lampState.duskSecondsGone) + String("; Dim = ") + String(dim);
@@ -94,7 +94,7 @@ void ThemeDusk() {
   } else {
     fill_solid(_leds, NUMPIXELS, off);
     #ifdef HASPIR     
-    if(lampState.ledTheme != 5) { lampState.ledTheme = 5; saveState(); }
+    if(lampState.ledTheme != lampState.neutralTheme) { setLedTheme(lampState.neutralTheme); saveState(); }
     #endif
   }
 }
@@ -126,7 +126,7 @@ void ThemeRainbow() {
   }
 }
 
-const byte themeCount = 11;
+const byte themeCount = Theme_Count;
 ThemeEntry themes[themeCount] = {  
   #ifdef ROOFLIGHT
   { ThemeYellowPlusSpot,  false, 1.0, "Yellow + Spot", "Gelb + Strahler" },
@@ -145,7 +145,7 @@ ThemeEntry themes[themeCount] = {
   { ThemeRainbow,         true,  0.5, "Rainbow", "Regenbogen" }
 };
 
-void setLedTheme(int ledTheme) {
+void setLedTheme(Theme ledTheme) {
   lampState.ledTheme = ledTheme;
   if (ledTheme >= 0 && ledTheme < themeCount) {
     lampState.dim = themes[ledTheme].DefaultDim;
@@ -153,13 +153,15 @@ void setLedTheme(int ledTheme) {
   lampState.isThemeActive = false;
 }
 
-void setLed(byte ledTheme) {
+void setLed(Theme ledTheme) {
   // Debug: Prüfen ob setLed überhaupt die Änderung mitbekommt
   static byte debugLastInputTheme = 255;
   if (ledTheme != debugLastInputTheme) {
     TRACE("setLed input changed: " + String(debugLastInputTheme) + " -> " + String(ledTheme));
     debugLastInputTheme = ledTheme;
   }
+
+  Theme currentTheme = ledTheme;
 
   lampState.isSettingTheme = true;
   int second = timeinfo.tm_sec;
@@ -178,40 +180,40 @@ void setLed(byte ledTheme) {
   if (lampState.dawnDays[weekday]) {
     lampState.dawnSecondsGone = ((hour - lampState.dawn_hour) * 60 + (minute - lampState.dawn_minute)) * 60 + second;
     if (trace) TRACE("Dawn: " + String(lampState.dawn_hour) + ":" + String(lampState.dawn_minute) + " -> Gone: " + String(lampState.dawnSecondsGone));
-    if (lampState.dawnSecondsGone > 0 && lampState.dawnSecondsGone < lampState.light_interval_s)      if (ledTheme != lampState.dawnTheme) {
+    if (lampState.dawnSecondsGone > 0 && lampState.dawnSecondsGone < lampState.light_interval_s)      if (currentTheme != lampState.dawnTheme) {
         TRACE("Switching to Dawn Theme");
         if(lampState.ledTheme != lampState.neutralTheme) {
           lampState.ledTheme = lampState.neutralTheme;
         }
-        ledTheme = lampState.dawnTheme;
+        currentTheme = lampState.dawnTheme;
       }
   }
   if (lampState.duskDays[weekday]) {
     lampState.duskSecondsGone = ((hour - lampState.dusk_hour) * 60 + (minute - lampState.dusk_minute)) * 60 + second;
     if (trace) TRACE("Dusk: " + String(lampState.dusk_hour) + ":" + String(lampState.dusk_minute) + " -> Gone: " + String(lampState.duskSecondsGone));
     if (lampState.duskSecondsGone > 0 && lampState.duskSecondsGone < lampState.light_interval_s)
-      if (ledTheme != lampState.duskTheme) {
+      if (currentTheme != lampState.duskTheme) {
         TRACE("Switching to Dusk Theme");
         if(lampState.ledTheme != lampState.neutralTheme) {
           lampState.ledTheme = lampState.neutralTheme;
         }
-        ledTheme = lampState.duskTheme;
+        currentTheme = lampState.duskTheme;
       }
   }
-  if(lampState.ledThemeLast != ledTheme) {
-    TRACE("Theme changed: " + String(lampState.ledThemeLast) + " -> " + String(ledTheme));
-    lampState.ledThemeLast = ledTheme;
+  if(lampState.ledThemeLast != currentTheme) {
+    TRACE("Theme changed: " + String(lampState.ledThemeLast) + " -> " + String(currentTheme));
+    lampState.ledThemeLast = currentTheme;
     lampState.isThemeActive = false;
   }
 
-  if(lampState.isThemeActive && !themes[ledTheme].IsDynamic && !lampState.firstAfterSwitch) return;
+  if(lampState.isThemeActive && !themes[currentTheme].IsDynamic && !lampState.firstAfterSwitch) return;
 
   lampState.isLedOn = true;
   #ifdef DOUBLERELAY
   lampState.isSpotlightOn = false;
   #endif
 
-  themes[ledTheme].Function();
+  themes[currentTheme].Function();
 
   lampState.firstAfterSwitch = false;
   #ifdef ROOFLIGHT

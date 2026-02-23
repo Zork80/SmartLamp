@@ -56,9 +56,9 @@ void saveState() {
 void loadState() {
   TRACE("Load state");
   #ifdef LOADTHEME
-  setLedTheme(EEPROM.read(0));
+  setLedTheme((Theme)EEPROM.read(0));
   #else
-  setLedTheme(0);
+  setLedTheme(Theme_Off);
   #endif
   uint8_t r = EEPROM.read(1);
   uint8_t g = EEPROM.read(2);

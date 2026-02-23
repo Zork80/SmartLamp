@@ -3,6 +3,26 @@
 
 #include <Arduino.h>
 
+enum Theme : byte {
+    // The order must match the themes array in Themes.cpp
+    #ifdef ROOFLIGHT
+    Theme_YellowPlusSpot, // 0
+    #else
+    Theme_Off,            // 0
+    #endif
+    Theme_Yellow,         // 1
+    Theme_Bright,         // 2
+    Theme_Selection,      // 3
+    Theme_NightLight,     // 4
+    Theme_Twinkle,        // 5
+    Theme_Fire,           // 6
+    Theme_Dawn,           // 7
+    Theme_Dusk,           // 8
+    Theme_Wave,           // 9
+    Theme_Rainbow,        // 10
+    Theme_Count
+};
+
 typedef void (* ThemeFP)();
 
 struct ThemeEntry {
@@ -13,10 +33,10 @@ struct ThemeEntry {
   String Name_de;
 };
 
-extern const byte themeCount;
+extern const byte themeCount; // = Theme_Count
 extern ThemeEntry themes[];
 
-void setLedTheme(int ledTheme);
-void setLed(byte ledTheme);
+void setLedTheme(Theme ledTheme);
+void setLed(Theme ledTheme);
 
 #endif

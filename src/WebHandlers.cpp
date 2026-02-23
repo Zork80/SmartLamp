@@ -24,10 +24,10 @@ void handle_rest(AsyncWebServerRequest *request, uint8_t *data, size_t len, size
         int b = postObj["brightness"];
         lampState.dim = (float)b / 255.0;
         // Bei statischen Themes Update erzwingen, damit Helligkeit übernommen wird
-        if ((byte)lampState.ledTheme < themeCount && !themes[lampState.ledTheme].IsDynamic) lampState.isThemeActive = false;
+        if (lampState.ledTheme < Theme_Count && !themes[lampState.ledTheme].IsDynamic) lampState.isThemeActive = false;
       }
       if (postObj["theme"].is<int>()) {
-        if((int)lampState.ledTheme != (int)postObj["theme"]) setLedTheme((int)postObj["theme"]);
+        if(lampState.ledTheme != (Theme)postObj["theme"].as<int>()) setLedTheme((Theme)postObj["theme"].as<int>());
       }
       if (postObj["color"].is<uint32_t>()) {
         lampState.isThemeActive = false;
@@ -72,7 +72,7 @@ void handle_read_config(AsyncWebServerRequest *request, uint8_t *data, size_t le
       input = String(tmp);
     }
     JsonDocument doc;
-    for(int i =0; i < themeCount; i++) {
+    for(int i =0; i < Theme_Count; i++) {
       if(input == "de") doc.add(themes[i].Name_de);
       else doc.add(themes[i].Name);
     }

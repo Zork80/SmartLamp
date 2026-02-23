@@ -18,7 +18,7 @@ PubSubClient mqttClient(espClient);
 bool lastIsLedOnMqtt = true;
 float lastDimMqtt = 0.2;
 CRGB lastPickedColorMqtt = CRGB(0,0,255);
-byte lastLedThemeMqtt = 0;
+Theme lastLedThemeMqtt = Theme_Off;
 
 int lastDawnHour = -1;
 int lastDawnMinute = -1;
@@ -44,12 +44,12 @@ void publishState() {
   JsonDocument doc;
 #ifdef ROOFLIGHT
   // Für RoofLight ist Theme 1 (Yellow, Spot aus) der "Aus"-Zustand
-  doc["state"] = ((byte)lampState.ledTheme == 1) ? "OFF" : "ON";
+  doc["state"] = (lampState.ledTheme == Theme_Yellow) ? "OFF" : "ON";
 #else
   doc["state"] = (bool)lampState.isLedOn ? "ON" : "OFF";
 #endif
   doc["brightness"] = (int)((float)lampState.dim * 255);
-  if ((byte)lampState.ledTheme < themeCount) {
+  if (lampState.ledTheme < Theme_Count) {
     doc["effect"] = themes[lampState.ledTheme].Name;
   } else {
     doc["effect"] = nullptr;
@@ -214,21 +214,21 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     lampState.isLedOn = true; // Rooflight ist physisch immer an
     
     if (!on) {
-      TRACE("MQTT: Switching OFF (Theme 1)");
-      setLedTheme(1);
+      TRACE("MQTT: Switching OFF (Theme Yellow)");
+      setLedTheme(Theme_Yellow);
     } else { // state is ON
       // If brightness is sent while the lamp is "OFF" (Theme != 0),
       // we assume the user only wants to dim the ambient light.
       // In this case, we do NOT change the theme to 0 (Spot on).
-      bool isDimmingAmbient = doc.containsKey("brightness") && (byte)lampState.ledTheme != 0;
+      bool isDimmingAmbient = doc.containsKey("brightness") && lampState.ledTheme != Theme_YellowPlusSpot;
       // Check if theme will be overwritten by color/effect later in this function
       bool willSetThemeLater = doc.containsKey("color") || doc.containsKey("effect");
 
       if (isDimmingAmbient) {
-        TRACE("MQTT: Brightness change while OFF -> Keeping current Theme");
+        TRACE("MQTT: Brightness change while 'OFF' -> Keeping current Theme");
       } else if (!willSetThemeLater) {
         TRACE("MQTT: Switching ON (Theme 0)");
-        setLedTheme(0);
+        setLedTheme(Theme_YellowPlusSpot);
       }
       lampState.isThemeActive = false; // Update erzwingen
       delay(50);
@@ -238,19 +238,19 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     
     if (!on) {
       // Bevor wir ausschalten, speichern wir das aktuelle Theme (wenn es nicht schon Aus ist)
-      if (lampState.ledTheme != 0) {
+      if (lampState.ledTheme != Theme_Off) {
         lampState.savedTheme = lampState.ledTheme;
       }
-      setLedTheme(0); // Theme 0 ist "Aus"
-    } else if (lampState.ledTheme == 0) {
+      setLedTheme(Theme_Off); // Theme Off ist "Aus"
+    } else if (lampState.ledTheme == Theme_Off) {
       // State is ON and current theme is OFF
       // Only restore theme if we are not about to set a color or effect
       if (!doc.containsKey("color") && !doc.containsKey("effect")) {
-        if (lampState.savedTheme > 0 && lampState.savedTheme < themeCount) {
+        if (lampState.savedTheme > 0 && lampState.savedTheme < Theme_Count) {
           setLedTheme(lampState.savedTheme);
         } else {
           // Fallback to a default "on" theme if nothing valid was saved
-          setLedTheme(1);
+          setLedTheme(Theme_Yellow);
         }
       }
     }
@@ -262,7 +262,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     int b = doc["brightness"];
     lampState.dim = (float)b / 255.0;
     // Bei statischen Themes (wie Theme 0 bei Rooflight) Update erzwingen, damit Helligkeit übernommen wird
-    if (lampState.ledTheme < themeCount && !themes[lampState.ledTheme].IsDynamic) {
+    if (lampState.ledTheme < Theme_Count && !themes[lampState.ledTheme].IsDynamic) {
       lampState.isThemeActive = false;
     }
   }
@@ -272,15 +272,15 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     lampState.pickedColor.g = doc["color"]["g"];
     lampState.pickedColor.b = doc["color"]["b"];
     // Wenn eine Farbe gewählt wird, schalten wir auf das "Selection" Theme (Index 3)
-    setLedTheme(3);
+    setLedTheme(Theme_Selection);
   }
 
   if (doc.containsKey("effect")) {
     String effect = doc["effect"];
     // Suche den Index anhand des Namens
-    for(int i=0; i < themeCount; i++) {
+    for(int i=0; i < Theme_Count; i++) {
       if (themes[i].Name == effect) {
-        setLedTheme(i);
+        setLedTheme((Theme)i);
         break;
       }
     }

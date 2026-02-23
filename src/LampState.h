@@ -5,6 +5,7 @@
 #include <FastLED.h>
 
 #include "Tracing.h"
+#include "Themes.h"
 
 // Template-Klasse, die bei jeder Zuweisung prüft, ob sich der Wert geändert hat
 // und dies protokolliert.
@@ -39,9 +40,9 @@ public:
     Traced<bool> isSpotlightOn{true, "isSpotlightOn"};
     #endif
 
-    Traced<byte> ledTheme{0, "ledTheme"};
-    byte ledThemeLast = 0;
-    Traced<byte> savedTheme{1, "savedTheme"}; // Speichert das Theme vor dem Ausschalten
+    Traced<Theme> ledTheme{Theme_Off, "ledTheme"};
+    Theme ledThemeLast = Theme_Off;
+    Traced<Theme> savedTheme{Theme_Yellow, "savedTheme"}; // Speichert das Theme vor dem Ausschalten
     Traced<bool> isThemeActive{false, "isThemeActive"};
     bool isSettingTheme = false;
     bool firstAfterSwitch = true;
@@ -58,12 +59,12 @@ public:
     CRGB pickedColor = CRGB(0, 0, 255);
     Traced<float> dim{0.2, "dim"};
 
-    int dawnTheme = 7;
-    int duskTheme = 8;
+    Theme dawnTheme = Theme_Dawn;
+    Theme duskTheme = Theme_Dusk;
     #ifdef HASPIR
-    int neutralTheme = 4;
+    Theme neutralTheme = Theme_NightLight;
     #else
-    int neutralTheme = 0;
+    Theme neutralTheme = Theme_Off;
     #endif
     int dawnSecondsGone = 0;
     int duskSecondsGone = 0;
