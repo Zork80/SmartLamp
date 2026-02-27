@@ -6,8 +6,10 @@
 #include <FastLED.h>
 #include <EEPROM.h>
 #include "SPIFFS.h"
-#include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
+#ifdef CONFIG_IDF_TARGET_ESP32
+  #include "soc/soc.h"
+  #include "soc/rtc_cntl_reg.h"
+#endif
 
 // Eigene Module
 #include "Globals.h"
@@ -50,7 +52,7 @@ bool isApMode = false;
 
 // --- Ende Globale Definitionen ---
 
-#define SIGNALPIN 12
+#define SIGNALPIN LED_PIN
 
 #ifdef HASRCSWITCH
   #include <RCSwitch.h>
@@ -78,7 +80,9 @@ void setTimezone(String timezone){
 
 void setup()
 {
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Brownout-Detektor deaktivieren
+  #ifdef CONFIG_IDF_TARGET_ESP32
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Brownout-Detektor deaktivieren
+  #endif
 
   pinMode(SIGNALPIN, OUTPUT);
 
