@@ -7,8 +7,8 @@
 #include "Tracing.h"
 #include "Themes.h"
 
-// Template-Klasse, die bei jeder Zuweisung prüft, ob sich der Wert geändert hat
-// und dies protokolliert.
+// Template class that checks if the value has changed on every assignment
+// and logs it.
 template <typename T>
 class Traced {
     T value;
@@ -24,10 +24,10 @@ public:
         return *this;
     }
 
-    // Implizite Konvertierung zum Basis-Typ (für Lesezugriffe)
+    // Implicit conversion to base type (for read access)
     operator T() const { return value; }
     
-    // Vergleichsoperatoren
+    // Comparison operators
     bool operator==(const T& other) const { return value == other; }
     bool operator!=(const T& other) const { return value != other; }
 };
@@ -35,14 +35,14 @@ public:
 class LampState {
 public:
     Traced<bool> isLedOn{true, "isLedOn"};
-    // Sicherstellen, dass isSpotlightOn da ist, wenn ROOFLIGHT definiert ist (unabhängig von Globals.h)
+    // Ensure isSpotlightOn is present if ROOFLIGHT is defined (independent of Globals.h)
     #if defined(HASSPOTLIGHT) || defined(ROOFLIGHT)
     Traced<bool> isSpotlightOn{true, "isSpotlightOn"};
     #endif
 
     Traced<Theme> ledTheme{Theme_Off, "ledTheme"};
     Theme ledThemeLast = Theme_Off;
-    Traced<Theme> savedTheme{Theme_Yellow, "savedTheme"}; // Speichert das Theme vor dem Ausschalten
+    Traced<Theme> savedTheme{Theme_Yellow, "savedTheme"}; // Saves the theme before switching off
     Traced<bool> isThemeActive{false, "isThemeActive"};
     bool isSettingTheme = false;
     bool firstAfterSwitch = true;

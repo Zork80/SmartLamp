@@ -7,14 +7,14 @@
 #include "Themes.h"
 #include "Persistence.h"
 
-// MQTT Variablen
+// MQTT Variables
 String mqttServer = "";
 #define MQTT_PORT 1883
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 
-// Status-Tracking für MQTT Updates
+// Status tracking for MQTT updates
 bool lastIsLedOnMqtt = true;
 float lastDimMqtt = 0.2;
 CRGB lastPickedColorMqtt = CRGB(0,0,255);
@@ -43,7 +43,7 @@ void mqttLog(String text) {
 void publishState() {
   JsonDocument doc;
 #ifdef ROOFLIGHT
-  // Für RoofLight ist Theme 1 (Yellow, Spot aus) der "Aus"-Zustand
+  // For RoofLight, Theme 1 (Yellow, Spot off) is the "Off" state
   doc["state"] = (lampState.ledTheme == Theme_Yellow) ? "OFF" : "ON";
 #else
   doc["state"] = (bool)lampState.isLedOn ? "ON" : "OFF";
@@ -100,13 +100,13 @@ JsonDocument doc;
   doc["schema"] = "json";
   doc["brightness"] = true;
   doc["effect"] = true;
-  doc["optimistic"] = false; // Wichtig: HA wartet auf Status-Rückmeldung
+  doc["optimistic"] = false; // Important: HA waits for status feedback
 
-  // Modern: supported_color_modes statt "rgb": true
+  // Modern: supported_color_modes instead of "rgb": true
   JsonArray colorModes = doc["supported_color_modes"].to<JsonArray>();
   colorModes.add("rgb");
 
-  // Device Registry Information (Identifiers MÜSSEN ein Array sein)
+  // Device Registry Information (Identifiers MUST be an array)
   JsonObject device = doc["device"].to<JsonObject>();
   JsonArray identifiers = device["identifiers"].to<JsonArray>();
   identifiers.add("smartlamp_" + chipId);
@@ -128,7 +128,7 @@ JsonDocument doc;
   String topic = "homeassistant/light/smartlamp_" + chipId + "/config";
   mqttClient.publish(topic.c_str(), buffer, true);
 
-  // Discovery für Dawn/Dusk Einstellungen
+  // Discovery for Dawn/Dusk settings
   const char* days[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
   const char* types[] = {"dawn", "dusk"};
   
@@ -149,7 +149,7 @@ JsonDocument doc;
     doc["pattern"] = "\\d{2}:\\d{2}";
     doc["max"] = 5;
     
-    // Device Info muss für jede Nachricht neu gebaut werden
+    // Device Info must be rebuilt for every message
     JsonObject dev = doc["device"].to<JsonObject>();
     JsonArray ids = dev["identifiers"].to<JsonArray>();
     ids.add("smartlamp_" + chipId);
@@ -162,7 +162,7 @@ JsonDocument doc;
     char bufferTime[1024];
     serializeJson(doc, bufferTime);
     mqttClient.publish(topicTime.c_str(), bufferTime, true);
-    delay(10); // Kurze Pause um Netzwerk-Flooding zu vermeiden
+    delay(10); // Short pause to avoid network flooding
 
     // Day Switches
     for (int i = 0; i < 7; i++) {
@@ -201,7 +201,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     return;
   }
 
-  // Trace eingehende Nachricht (Payload in String wandeln für Log)
+  // Trace incoming message (convert payload to string for log)
   char debugBuf[length + 1];
   memcpy(debugBuf, payload, length);
   debugBuf[length] = '\0';
@@ -211,7 +211,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     const char* state = doc["state"];
     bool on = (strcmp(state, "ON") == 0);
 #ifdef ROOFLIGHT
-    lampState.isLedOn = true; // Rooflight ist physisch immer an
+    lampState.isLedOn = true; // Rooflight is physically always on
     
     if (!on) {
       TRACE("MQTT: Switching OFF (Theme Yellow)");
@@ -228,20 +228,20 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         TRACE("MQTT: Brightness change while 'OFF' -> Keeping current Theme");
       } else if (!willSetThemeLater) {
         TRACE("MQTT: Switching ON (Theme 0)");
-        setLedTheme(Theme_Off); // Theme 0 ist "ON" für rooflight (Spot an)
+        setLedTheme(Theme_Off); // Theme 0 is "ON" for rooflight (Spot on)
       }
-      lampState.isThemeActive = false; // Update erzwingen
+      lampState.isThemeActive = false; // Force update
       delay(50);
     }
 #else
     lampState.isLedOn = on;
     
     if (!on) {
-      // Bevor wir ausschalten, speichern wir das aktuelle Theme (wenn es nicht schon Aus ist)
+      // Before switching off, save the current theme (if not already Off)
       if (lampState.ledTheme != Theme_Off) {
         lampState.savedTheme = lampState.ledTheme;
       }
-      setLedTheme(Theme_Off); // Theme Off ist "Aus"
+      setLedTheme(Theme_Off); // Theme Off is "Off"
     } else if (lampState.ledTheme == Theme_Off) {
       // State is ON and current theme is OFF
       // Only restore theme if we are not about to set a color or effect
@@ -255,13 +255,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       }
     }
 #endif
-    lampState.isThemeActive = false; // Update der LEDs erzwingen
+    lampState.isThemeActive = false; // Force LED update
   }
 
   if (doc.containsKey("brightness")) {
     int b = doc["brightness"];
     lampState.dim = (float)b / 255.0;
-    // Bei statischen Themes (wie Theme 0 bei Rooflight) Update erzwingen, damit Helligkeit übernommen wird
+    // Force update for static themes (like Theme 0 on Rooflight) so brightness is applied
     if (lampState.ledTheme < Theme_Count && !themes[lampState.ledTheme].IsDynamic) {
       lampState.isThemeActive = false;
     }
@@ -271,13 +271,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     lampState.pickedColor.r = doc["color"]["r"];
     lampState.pickedColor.g = doc["color"]["g"];
     lampState.pickedColor.b = doc["color"]["b"];
-    // Wenn eine Farbe gewählt wird, schalten wir auf das "Selection" Theme (Index 3)
+    // If a color is selected, switch to "Selection" theme (Index 3)
     setLedTheme(Theme_Selection);
   }
 
   if (doc.containsKey("effect")) {
     String effect = doc["effect"];
-    // Suche den Index anhand des Namens
+    // Search index by name
     for(int i=0; i < Theme_Count; i++) {
       if (themes[i].Name == effect) {
         setLedTheme((Theme)i);
@@ -327,9 +327,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     }
     return; // Config handled
   }
-
-  // publishState() hier entfernen! 
-  // Die Änderungserkennung in loopMqtt() übernimmt das Senden.
 }
 
 void loadMqttConfig() {
@@ -362,23 +359,23 @@ void reconnectMqtt() {
     String chipId = getChipId();
     String clientId = "SmartLamp-" + chipId;
     
-    // Topics für die Verfügbarkeit
+    // Topics for availability
     String availabilityTopic = "smartlamp/" + chipId + "/availability";
     
     // connect(id, user, pass, willTopic, willQos, willRetain, willMessage)
-    // Wir setzen den Last Will auf "offline", falls der ESP32 die Verbindung verliert.
+    // Set Last Will to "offline" in case ESP32 loses connection.
     if (mqttClient.connect(clientId.c_str(), nullptr, nullptr, availabilityTopic.c_str(), 1, true, "offline")) { 
       #ifdef DEBUG
       TRACE("MQTT connected");
       #endif
 
-      // Sofort nach dem Verbinden "online" senden
+      // Send "online" immediately after connecting
       mqttClient.publish(availabilityTopic.c_str(), "online", true);
       
-      // Debug-Nachricht senden, damit das Topic im Explorer sofort sichtbar wird
+      // Send debug message so the topic becomes visible in explorer immediately
       mqttLog("MQTT Connected. Debugging active.");
 
-      // Discovery und Abonnements
+      // Discovery and subscriptions
       sendDiscovery();
       mqttClient.subscribe(("smartlamp/" + chipId + "/set").c_str());
       mqttClient.subscribe(("smartlamp/" + chipId + "/+/+/set").c_str()); // Config Topics
@@ -389,12 +386,12 @@ void reconnectMqtt() {
 }
 
 void setupMqtt() {
-  loadMqttConfig(); // WICHTIG: Erst laden, dann Server setzen!
+  loadMqttConfig(); // IMPORTANT: Load first, then set server!
   
   mqttClient.setServer(mqttServer.c_str(), MQTT_PORT);
   mqttClient.setCallback(mqttCallback);
   
-  // Optional: Buffer vergrößern für große JSON-Pakete (Discovery + Effekte)
+  // Optional: Increase buffer for large JSON packets (Discovery + Effects)
   mqttClient.setBufferSize(1500); 
 }
 

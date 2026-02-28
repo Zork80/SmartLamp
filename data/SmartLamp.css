@@ -154,10 +154,10 @@ body#lang-en .lang.en { display: inline; }
 /* Expander Arrow */
 .btn[data-toggle="collapse"] {
     position: relative;
-    padding-right: 40px; /* Platz für den Pfeil schaffen */
+    padding-right: 40px; /* Create space for the arrow */
 }
 .btn[data-toggle="collapse"]::after {
-    content: "\25BC"; /* Unicode Pfeil nach unten */
+    content: "\25BC"; /* Unicode arrow down */
     position: absolute;
     right: 20px;
     top: 50%;
@@ -167,5 +167,5 @@ body#lang-en .lang.en { display: inline; }
     opacity: 0.8;
 }
 .btn[data-toggle="collapse"][aria-expanded="true"]::after {
-    transform: translateY(-50%) rotate(180deg); /* Drehung bei offenem Zustand */
+    transform: translateY(-50%) rotate(180deg); /* Rotation when open */
 }

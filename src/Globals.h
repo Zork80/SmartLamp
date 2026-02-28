@@ -6,7 +6,7 @@
 #include <FastLED.h>
 #include "time.h"
 
-// --- Konfiguration ---
+// --- Configuration ---
 
 #ifdef ROOFLIGHT
   #define HASRCSWITCH
@@ -29,7 +29,7 @@
 #endif
 #define NUMPIXELS (PIXELSPERSTAGE * STAGES)
 
-// --- Globale Variablen (Deklaration) ---
+// --- Global Variables (Declaration) ---
 extern CRGBArray<NUMPIXELS> _leds;
 extern LampState lampState;
 

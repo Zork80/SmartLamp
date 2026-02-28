@@ -4,7 +4,7 @@
 #include "Twinkles.h"
 #include "Persistence.h"
 
-// Lokale Variablen für Themes
+// Local variables for themes
 int counter = 0;
 bool forward = true;
 int waveDelay = 100;
@@ -162,7 +162,7 @@ ThemeEntry themes[themeCount] = {
   #else
   { ThemeOff,             false, 0.0, "Off", "Aus" },
   #endif                                      
-  { ThemeYellow,          false, 0.5, "Yellow", "Gelb" },
+  { ThemeYellow,          false, 1.0, "Yellow", "Gelb" },
   { ThemeYellowWarmWhite, false, 1.0, "Bright", "Hell" },
   { ThemePickedColor,     false, 0.5, "Selection", "Wahl" },
   { ThemeNightLight,      true,  0.1, "Night Light", "Nachtlicht" },
@@ -186,7 +186,7 @@ void setLedTheme(Theme ledTheme) {
 }
 
 void setLed(Theme ledTheme) {
-  // Debug: Prüfen ob setLed überhaupt die Änderung mitbekommt
+  // Debug: Check if setLed even notices the change
   static byte debugLastInputTheme = 255;
   if (ledTheme != debugLastInputTheme) {
     TRACE("setLed input changed: " + String(debugLastInputTheme) + " -> " + String(ledTheme));
@@ -257,7 +257,7 @@ void setLed(Theme ledTheme) {
   }    
   #endif
   
-  // Globale Helligkeit anwenden (wichtig für MQTT Dimmer)
+  // Apply global brightness (important for MQTT dimmer)
   FastLED.setBrightness((uint8_t)((float)lampState.dim * 255));
   FastLED.show();
 

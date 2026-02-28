@@ -1,6 +1,6 @@
 #include "Persistence.h"
 #include "Globals.h"
-#include "Themes.h" // Für setLedTheme
+#include "Themes.h" // For setLedTheme
 #include <EEPROM.h>
 
 byte packDays(bool weekDays[]) {
@@ -96,6 +96,6 @@ JsonDocument getJsonData() {
   getObject["do_dusk"] = packDays(lampState.duskDays);
   getObject["ssid"] = wifiSsid;
   getObject["hostname"] = hostname;
-  // Password senden wir aus Sicherheitsgründen nicht zurück, oder leer
+  // For security reasons, we don't send the password back, or send it empty
   return getObject;
 }

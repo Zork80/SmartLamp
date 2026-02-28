@@ -3,14 +3,14 @@
 
 #include <Arduino.h>
 
-// Forward-Deklaration der Funktion, die das eigentliche Logging durchführt
+// Forward declaration of the function that performs the actual logging
 extern void mqttLog(String text);
 
 #ifdef DEBUG
-  // Im DEBUG-Modus auf Serial und MQTT loggen
+  // In DEBUG mode, log to Serial and MQTT
   #define TRACE(x) { if(Serial) Serial.println(x); mqttLog(String(x)); }
 #else
-  // Im RELEASE-Modus nichts tun
+  // In RELEASE mode, do nothing
   #define TRACE(x) {}
 #endif
 

@@ -6,7 +6,6 @@ function onload() {
   switchLanguage();
 
   var language = window.navigator.userLanguage || window.navigator.language;
-  // Browser-Sprache auslesen
   if(language.indexOf('de') !== -1) {
     lang = 'de';
   } else {
@@ -225,7 +224,6 @@ function setTimeValues(cdo) {
 }
 
 function textSelector(element) {
-  /*bei Auswahl des Eingabefeldes wird der gesamte Inhalt markiert*/
   $(element).select();
 }
 
@@ -382,17 +380,13 @@ function getTimeCall() {
 }
 
 function switchLanguage() {
-  //Das Javascript so einfach wie Möglich
   var language = window.navigator.userLanguage || window.navigator.language;
-  // Browser-Sprache auslesen
   if(language.indexOf('de') !== -1) {
     testsprache = 'de';
   } else {
     testsprache = 'en';
   }
-  // Browser-Sprache an den Body anhängen
   $('body').attr( "id",'lang-'+testsprache);
-  // Sprache wechseln (hier mit jquery auf bestimmte Links)
   $(".languageswitcher").on('click',function(e){
     e.preventDefault();
   $("body").attr( "id",'lang-'+$(this).attr('lang'));

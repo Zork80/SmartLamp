@@ -23,7 +23,7 @@ void handle_rest(AsyncWebServerRequest *request, uint8_t *data, size_t len, size
       if (postObj["brightness"].is<int>()) {
         int b = postObj["brightness"];
         lampState.dim = (float)b / 255.0;
-        // Bei statischen Themes Update erzwingen, damit Helligkeit übernommen wird
+        // For static themes, force update so brightness is applied
         if (lampState.ledTheme < Theme_Count && !themes[lampState.ledTheme].IsDynamic) lampState.isThemeActive = false;
       }
       if (postObj["theme"].is<int>()) {
@@ -76,7 +76,7 @@ void handle_read_config(AsyncWebServerRequest *request, uint8_t *data, size_t le
       if(input == "de") doc.add(themes[i].Name_de);
       else doc.add(themes[i].Name);
     }
-    char buffer[1024]; // Buffer vergrößert
+    char buffer[1024]; // Buffer enlarged
     serializeJson(doc, buffer);
     request->send(200, "text/json", buffer);
   }

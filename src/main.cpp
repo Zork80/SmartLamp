@@ -11,14 +11,14 @@
   #include "soc/rtc_cntl_reg.h"
 #endif
 
-// Eigene Module
+// Custom modules
 #include "Globals.h"
 #include "Themes.h"
 #include "Persistence.h"
 #include "WebHandlers.h"
 #include "MqttHandler.h"
 
-// --- Globale Variablen Definitionen ---
+// --- Global Variable Definitions ---
 CRGBArray<NUMPIXELS> _leds;
 LampState lampState;
 
@@ -33,7 +33,7 @@ CRGB fireColor = CRGB(80,  18,  0);
 CRGB waveColorDark = CRGB(0,  20,  117);
 CRGB waveColorAct = CRGB(0,  20,  117);
 
-// Definition der Paletten für Twinkles.h
+// Definition of palettes for Twinkles.h
 CRGBPalette16 gCurrentPalette;
 CRGBPalette16 gTargetPalette;
 
@@ -50,7 +50,7 @@ String wifiPassword = "";
 String hostname = "";
 bool isApMode = false;
 
-// --- Ende Globale Definitionen ---
+// --- End Global Definitions ---
 
 #define SIGNALPIN LED_PIN
 
@@ -81,19 +81,23 @@ void setTimezone(String timezone){
 void setup()
 {
   #ifdef CONFIG_IDF_TARGET_ESP32
-    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Brownout-Detektor deaktivieren
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Disable brownout detector
   #endif
 
   pinMode(SIGNALPIN, OUTPUT);
 
   FastLED.addLeds<WS2811, SIGNALPIN, LED_ORDER>(_leds, NUMPIXELS);
 
-  // Stromverbrauch begrenzen (wichtig bei USB-Betrieb, z.B. auf 500mA)
+  // Limit power consumption (important for USB operation, e.g., to 500mA)
+  #ifdef ROOFLIGHT
+  // 12V Power Supply for RoofLight (e.g. 4000mA limit for full brightness)
+  // FastLED needs the correct voltage (12V) to calculate power consumption correctly.
+  FastLED.setMaxPowerInVoltsAndMilliamps(12, 4000); 
+  #else
+  // Limit power consumption (important for USB operation, e.g., to 500mA)
   FastLED.setMaxPowerInVoltsAndMilliamps(5, 500); 
+  #endif
   
-  // Initialisiere Palette aus Twinkles.h (muss dort ggf. extern gemacht werden oder hier aufgerufen)
-  // chooseNextColorPalette(gTargetPalette); // Falls in Twinkles.h verfügbar
-
   #ifdef ROOFLIGHT
   pinMode(RELAYPIN, OUTPUT);
   if (lampState.isLedOn) digitalWrite(RELAYPIN , LOW);
@@ -180,12 +184,12 @@ void setup()
 
   ArduinoOTA.begin();
   configTime(0, 0, ntpServer);
-  setTimezone("CET-1CEST,M3.5.0,M10.5.0/3");
+  setTimezone("CET-1CEST,M3.5.0,M10.5.0/3"); // Timezone for Germany
 
   // MQTT Setup
   setupMqtt();
 
-  // Webserver Routen
+  // Webserver Routes
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){ 
     TRACE("GET / requested");
     if (SPIFFS.exists("/SmartLamp.html")) {
@@ -237,7 +241,7 @@ void loop()
         WiFi.reconnect();
       }
     } else if (!isApMode && WiFi.status() == WL_CONNECTED) {
-      // MQTT Loop und Reconnect
+      // MQTT Loop and Reconnect
       loopMqtt();
     }
     
