@@ -249,11 +249,18 @@ function readConfig(lang) {
       //console.log(data);
       themes = data;
 
+      var container = $('#theme-list');
+      container.empty();
+
       for(i = 0; i < themes.length; i++)
       {
-        element = document.getElementById(i);
-        if (element != null)
-          element.innerHTML = themes[i];
+        if (i == 3 || i == 7 || i == 8) {
+          element = document.getElementById(i);
+          if (element != null) element.innerHTML = "<Span>" + themes[i] + "</Span>";
+          continue;
+        }
+        var btnHtml = '<div class="col-6 col-md-3 mb-2"><button type="button" class="btn btn-success btn-lg btn-block" id="' + i + '" onclick="valueChanged(this.id)"><Span>' + themes[i] + '</Span></button></div>';
+        container.append(btnHtml);
       }
     };
   })

@@ -116,6 +116,35 @@ void ThemeWave() {
   delay(waveDelay);
 }
 
+void ThemeConfetti() {
+  if (!lampState.isThemeActive) fill_solid(_leds, NUMPIXELS, off);
+  fadeToBlackBy(_leds, NUMPIXELS, 10);
+  int pos = random16(NUMPIXELS);
+  _leds[pos] += CHSV(counter + random8(64), 200, 255);
+  counter++;
+  delay(20);
+}
+
+void ThemeSinelon() {
+  if (!lampState.isThemeActive) fill_solid(_leds, NUMPIXELS, off);
+  fadeToBlackBy(_leds, NUMPIXELS, 20);
+  int pos = beatsin16(13, 0, NUMPIXELS - 1);
+  _leds[pos] += CHSV(counter, 255, 192);
+  counter++;
+  delay(10);
+}
+
+void ThemeJuggle() {
+  if (!lampState.isThemeActive) fill_solid(_leds, NUMPIXELS, off);
+  fadeToBlackBy(_leds, NUMPIXELS, 20);
+  byte dothue = 0;
+  for (int i = 0; i < 8; i++) {
+    _leds[beatsin16(i + 7, 0, NUMPIXELS - 1)] |= CHSV(dothue, 200, 255);
+    dothue += 32;
+  }
+  delay(10);
+}
+
 void ThemeRainbow() {
   counter = (counter + 1) % 256;
   float offset = 256.0 / STAGES;
@@ -142,7 +171,10 @@ ThemeEntry themes[themeCount] = {
   { ThemeDawn,            true,  1.0, "Dawn", "Morgendämmerung" },
   { ThemeDusk,            true,  1.0, "Dusk", "Abenddämmerung" },
   { ThemeWave,            true,  0.5, "Wave", "Welle" },
-  { ThemeRainbow,         true,  0.5, "Rainbow", "Regenbogen" }
+  { ThemeRainbow,         true,  0.5, "Rainbow", "Regenbogen" },
+  { ThemeConfetti,        true,  0.8, "Confetti", "Konfetti" },
+  { ThemeSinelon,         true,  0.8, "Sinelon", "Sinelon" },
+  { ThemeJuggle,          true,  0.8, "Juggle", "Jonglieren" }
 };
 
 void setLedTheme(Theme ledTheme) {

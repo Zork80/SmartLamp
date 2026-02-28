@@ -258,11 +258,7 @@ void loop()
           setLedTheme((Theme)currentThemeIndex);
           TRACE("RC-Switch: on");
         } else if (mySwitch.getReceivedValue() == offValue) {      
-          #ifdef ROOFLIGHT
-          setLedTheme(Theme_YellowPlusSpot); // "Off" for rooflight is a specific theme
-          #else
-          setLedTheme(Theme_Off);
-          #endif
+          setLedTheme(Theme_Off); // is YellowPlusSpot for Rooflight
           TRACE("RC-Switch: off");
         } 
         saveState();

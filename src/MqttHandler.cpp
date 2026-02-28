@@ -220,7 +220,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       // If brightness is sent while the lamp is "OFF" (Theme != 0),
       // we assume the user only wants to dim the ambient light.
       // In this case, we do NOT change the theme to 0 (Spot on).
-      bool isDimmingAmbient = doc.containsKey("brightness") && lampState.ledTheme != Theme_YellowPlusSpot;
+      bool isDimmingAmbient = doc.containsKey("brightness") && lampState.ledTheme != Theme_Off;
       // Check if theme will be overwritten by color/effect later in this function
       bool willSetThemeLater = doc.containsKey("color") || doc.containsKey("effect");
 
@@ -228,7 +228,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         TRACE("MQTT: Brightness change while 'OFF' -> Keeping current Theme");
       } else if (!willSetThemeLater) {
         TRACE("MQTT: Switching ON (Theme 0)");
-        setLedTheme(Theme_YellowPlusSpot);
+        setLedTheme(Theme_Off); // Theme 0 ist "ON" für rooflight (Spot an)
       }
       lampState.isThemeActive = false; // Update erzwingen
       delay(50);

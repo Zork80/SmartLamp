@@ -5,11 +5,7 @@
 
 enum Theme : byte {
     // The order must match the themes array in Themes.cpp
-    #ifdef ROOFLIGHT
-    Theme_YellowPlusSpot, // 0
-    #else
-    Theme_Off,            // 0
-    #endif
+    Theme_Off,            // 0 //YellowPlusSpot for rooflight is "Off"
     Theme_Yellow,         // 1
     Theme_Bright,         // 2
     Theme_Selection,      // 3
@@ -20,6 +16,9 @@ enum Theme : byte {
     Theme_Dusk,           // 8
     Theme_Wave,           // 9
     Theme_Rainbow,        // 10
+    Theme_Confetti,       // 11
+    Theme_Sinelon,        // 12
+    Theme_Juggle,         // 13
     Theme_Count
 };
 
