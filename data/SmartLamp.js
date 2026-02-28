@@ -246,7 +246,6 @@ function readConfig(lang) {
   });
   def.done(function (data) {
     if (data != "") {
-      //console.log(data);
       themes = data;
 
       var container = $('#theme-list');
@@ -290,7 +289,6 @@ function makeTheCall() {
   });
   def.done(function (data) {
     if (data != "") {
-      //console.log(data);
       var myActuals = data;
 
       if (myActuals.theme != myOldActuals.theme) {

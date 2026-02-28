@@ -7,15 +7,7 @@
     <script src="./bootstrap.bundle.min.js"></script> 
     <link rel="stylesheet" href="./bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="./SmartLamp.css">
-
-    <!--
-    <script language="JavaScript" type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-    -->
-
     <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">    
-    <!--link rel="icon" href="data:,"-->
     </head>
 
     <body onload="onload()">
@@ -47,7 +39,7 @@
       <div class="input-group mb-4">
         <input type="color" class="form-control" id="colorpicker" onchange="valueChanged(this.id)" value="#0000ff">
         <div class="input-group-append">
-          <button class="btn btn-secondary btn-lg" type="button" id="3" onclick="valueChanged(this.id)">
+          <button class="btn btn-success btn-lg" type="button" id="3" onclick="valueChanged(this.id)">
             <Span>Theme 3</Span>
           </button>
         </div>
@@ -59,6 +51,14 @@
         </label>
         <input type="range" class="form-control-range" id="brightness" min="0" max="255" onchange="valueChanged(this.id)">
       </div>
+     <p>
+      <button class="btn btn-secondary btn-lg btn-block" type="button" data-toggle="collapse" data-target="#dawnDuskSettings" aria-expanded="true" aria-controls="dawnDuskSettings">
+        <Span class="lang de">Dämmerungseinstellungen</Span>
+        <Span class="lang en">Dawn & Dusk Settings</Span>
+      </button>
+     </p>
+     <div class="collapse show" id="dawnDuskSettings">
+       <div class="card card-body">
      <form>
       <div class="form-group row">
         <label class="col-sm-4 col-form-label">
@@ -70,7 +70,10 @@
         </div>
       </div>
       <div class="form-group row">
-          <label class="col-sm-4 col-form-label">Wochentage:</label>
+          <label class="col-sm-4 col-form-label">
+            <Span class="lang de">Wochentage:</Span>
+            <Span class="lang en">Weekdays:</Span>
+          </label>
           <div class="col-sm-8">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="dawnMonday" onchange="valueChanged(this.id)" value="">
@@ -133,7 +136,10 @@
         </div>
       </div>
       <div class="form-group row">
-        <label class="col-sm-4 col-form-label">Wochentage:</label>
+        <label class="col-sm-4 col-form-label">
+          <Span class="lang de">Wochentage:</Span>
+          <Span class="lang en">Weekdays:</Span>
+        </label>
         <div class="col-sm-8">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="duskMonday" onchange="valueChanged(this.id)" value="">
@@ -189,6 +195,8 @@
      </form>
      <div class="row">
       <div class="col-12 col-sm-4 offset-sm-4"><button type="button" class="btn btn-secondary btn-lg btn-block" onclick="onClickOk()"><span class="lang de">Übernehmen</span><span class="lang en">Apply</span></button></div>
+     </div>
+       </div>
      </div>
      <hr>
      <p>

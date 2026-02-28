@@ -55,6 +55,17 @@ p {text-align: center;}
     border-radius: 0;
 }
 
+/* Override for color picker to fill vertical space in input-group */
+.input-group > input[type="color"].form-control {
+    height: auto; /* Allow vertical stretching by the input-group */
+    padding: 2px; /* Reduce padding to make the color swatch larger */
+}
+
+/* Fix alignment in input groups by removing button margin */
+.input-group .btn {
+    margin-bottom: 0;
+}
+
 /* Custom Range Slider (Flat) */
 input[type=range] {
     -webkit-appearance: none;
@@ -139,3 +150,22 @@ input[type=range]::-webkit-slider-thumb {
 .lang { display: none; }
 body#lang-de .lang.de { display: inline; }
 body#lang-en .lang.en { display: inline; }
+
+/* Expander Arrow */
+.btn[data-toggle="collapse"] {
+    position: relative;
+    padding-right: 40px; /* Platz für den Pfeil schaffen */
+}
+.btn[data-toggle="collapse"]::after {
+    content: "\25BC"; /* Unicode Pfeil nach unten */
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.3s ease;
+    font-size: 0.7em;
+    opacity: 0.8;
+}
+.btn[data-toggle="collapse"][aria-expanded="true"]::after {
+    transform: translateY(-50%) rotate(180deg); /* Drehung bei offenem Zustand */
+}
