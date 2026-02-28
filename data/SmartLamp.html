@@ -16,10 +16,6 @@
 
     <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">    
     <!--link rel="icon" href="data:,"-->
-      <style>
-        h1 {text-align: center;}
-        p {text-align: center;}
-      </style>
     </head>
 
     <body onload="onload()">
@@ -36,11 +32,11 @@
      </p>
      <!-- id 7 and 8 are reserved for dawn and dusk -->
      <div class="row justify-content-center">  
-       <div class="col-6 col-sm-4 mb-2"><button type="button" class="btn btn-success btn-lg btn-block" id="NEXT" onclick="valueChanged(this.id)">
+       <div class="col-6 col-sm-4 mb-2"><button type="button" class="btn btn-secondary btn-lg btn-block" id="NEXT" onclick="valueChanged(this.id)">
          <Span class="lang de">Vor</Span>
          <Span class="lang en">Next</Span>
        </button></div>
-       <div class="col-6 col-sm-4 mb-2"><button type="button" class="btn btn-success btn-lg btn-block" id="PREV" onclick="valueChanged(this.id)">
+       <div class="col-6 col-sm-4 mb-2"><button type="button" class="btn btn-secondary btn-lg btn-block" id="PREV" onclick="valueChanged(this.id)">
         <Span class="lang de">Zurück</Span>
         <Span class="lang en">Prev</Span>
        </button></div>
@@ -51,7 +47,7 @@
       <div class="input-group mb-4">
         <input type="color" class="form-control" id="colorpicker" onchange="valueChanged(this.id)" value="#0000ff">
         <div class="input-group-append">
-          <button class="btn btn-success btn-lg" type="button" id="3" onclick="valueChanged(this.id)">
+          <button class="btn btn-secondary btn-lg" type="button" id="3" onclick="valueChanged(this.id)">
             <Span>Theme 3</Span>
           </button>
         </div>
@@ -192,7 +188,7 @@
       </div>
      </form>
      <div class="row">
-      <div class="col-12 col-sm-4 offset-sm-4"><button type="button" class="btn btn-success btn-lg btn-block" onclick="onClickOk()"><span class="lang de">Übernehmen</span><span class="lang en">Apply</span></button></div>
+      <div class="col-12 col-sm-4 offset-sm-4"><button type="button" class="btn btn-secondary btn-lg btn-block" onclick="onClickOk()"><span class="lang de">Übernehmen</span><span class="lang en">Apply</span></button></div>
      </div>
      <hr>
      <p>
@@ -234,7 +230,7 @@
           </div>
          </form>
          <div class="row">
-          <div class="col-sm-4"><button type="button" class="btn btn-warning btn-lg btn-block" onclick="onClickSaveAndReboot()">
+          <div class="col-12"><button type="button" class="btn btn-warning btn-lg btn-block" onclick="onClickSaveAndReboot()">
             <span class="lang de">Speichern & Neustart</span>
             <span class="lang en">Save & Reboot</span>
           </button></div>
