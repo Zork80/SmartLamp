@@ -1,44 +1,63 @@
 # SmartLamp
 
-This is the project for the SmartLamp controller.
+A smart, 3D-printable bedside lamp with a customizable lithophane shade. It features sleep and wake-up lights, various color themes, and is controlled by an ESP32.
 
-## Configuration
+The lamp offers a modern web interface for control and configuration and integrates seamlessly with Home Assistant.
 
-If no Wi-Fi credentials are saved, the SmartLamp will automatically start in Access Point (AP) mode.
-Connect to the lamp's Wi-Fi network (**SSID:** `SmartLampConfig`, **Password:** `12345678`) and configure your SSID and password conveniently via the web interface.
+## Features
 
-## Installation
+*   **Web Interface:** Control all functions via a responsive web interface, accessible from any device on the network.
+*   **Dynamic Themes:** A variety of built-in light themes as well as custom color selection.
+*   **Wake-up & Sleep Timer (Dawn/Dusk):** Simulates a sunrise to wake up gently or a sunset to fall asleep.
+*   **Easy Wi-Fi Setup:** If no network is configured, the lamp starts in Access Point mode for easy initial setup.
+*   **Home Assistant Integration:** Automatic detection and integration into Home Assistant via MQTT for advanced control and automation.
+*   **PlatformIO Project:** Easy to compile and upload using Visual Studio Code and the PlatformIO extension.
 
-This project is based on PlatformIO.
+## Required Hardware
 
-1. Open the project in an IDE with PlatformIO support (e.g., VS Code).
-2. Connect the microcontroller via USB.
-3. Execute the `Upload` command to compile and flash the firmware.
-4. Execute the `Upload Filesystem Image` command to upload the website files to the microcontroller.
-
-## Required Parts
-
-* 3D-printed parts
-* ESP32 Dev board
-* WS2812 RGB LED Ring (12 oder 24 LEDs)
-* 5x M2 x 6 mm screws
-* 3x wires to connect the LED ring (soldering on the ring, Dupont connectors on the ESP32)
-* 1 USB-Cable
+*   3D-printed parts (see below)
+*   ESP32 Dev Board
+*   WS2812B RGB LED Ring (designed for 24 LEDs)
+*   5x M2 self-tapping screws
+*   Micro-USB cable and power supply
 
 ## 3D Printing
 
-The files for 3D printing can be downloaded here: [SmartLamp on Printables](https://www.printables.com/model/237208-smartlamp)
+The files for 3D printing and instructions can be found here: [SmartLamp on Printables](https://www.printables.com/model/237208-smartlamp)
 
-## Home Assistant Integration
+## Software Installation
 
-The firmware supports MQTT and automatic detection by Home Assistant (MQTT Discovery).
+This project is based on PlatformIO.
+
+1.  Open the project folder in VS Code with the PlatformIO extension installed.
+2.  Connect the ESP32 to your computer via USB.
+3.  Use PlatformIO commands to:
+    *   **`Upload`** (compiles and flashes the main firmware).
+    *   **`Upload Filesystem Image`** (uploads the web interface files).
+
+## Configuration
+
+### 1. Initial Wi-Fi Setup
+
+If no Wi-Fi credentials are saved, the lamp starts an Access Point (AP).
+
+1.  Connect your phone or computer to the Wi-Fi network:
+    *   **SSID:** `SmartLampConfig`
+    *   **Password:** `12345678`
+2.  A captive portal should open automatically, or navigate to `192.168.4.1` in your browser.
+3.  Enter your Wi-Fi SSID and password in the web interface under "Network & Device Settings".
+4.  Save and reboot. The lamp will then connect to your network.
+
+### 2. Home Assistant Integration
+
+The firmware supports MQTT and automatic discovery by Home Assistant (MQTT Discovery).
 
 **Prerequisites:**
 1.  A running MQTT broker (e.g., the "Mosquitto broker" add-on in Home Assistant).
 2.  The MQTT integration must be configured in Home Assistant.
 
 **Setup:**
-1.  Enter the IP address of your MQTT broker in the SmartLamp's web interface under "Network & Device Settings".
+1.  Enter the IP address of your MQTT broker in the SmartLamp web interface under "Network & Device Settings".
 2.  Save the settings and restart the lamp.
 3.  The lamp should now automatically appear as a new device under **Settings -> Devices & Services -> MQTT** in Home Assistant and is immediately controllable.
 
