@@ -312,7 +312,12 @@ void loop()
 #ifdef HAS_BUTTONS
 void nextTheme() {
   int next = (int)lampState.ledTheme + 1;
-  if (next >= Theme_Count) next = 0;
+  if (next >= Theme_Count) {
+    next = Theme_First;
+    #ifdef SKIP_THEME_OFF
+    if (Theme_First == Theme_Off) next++;
+    #endif
+  }
   setLedTheme((Theme)next);
   saveState();
   TRACE("Theme: " + String(lampState.ledTheme));
@@ -320,7 +325,11 @@ void nextTheme() {
 
 void prevTheme() {
   int prev = (int)lampState.ledTheme - 1;
-  if (prev < 0) prev = Theme_Count - 1;
+  #ifdef SKIP_THEME_OFF
+  if (prev < Theme_First || (prev == Theme_First && Theme_First == Theme_Off)) prev = Theme_Count - 1;
+  #else
+  if (prev < Theme_First) prev = Theme_Count - 1;
+  #endif
   setLedTheme((Theme)prev);
   saveState();
   TRACE("Theme: " + String(lampState.ledTheme));
