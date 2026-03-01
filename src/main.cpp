@@ -63,11 +63,10 @@ void setup()
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Disable brownout detector
   #endif
 
+  Serial.begin(MONITOR_SPEED);
+
   #ifdef IS_NANO
-    Serial.begin(9600);
     randomSeed(analogRead(0));
-  #else
-    Serial.begin(115200);
   #endif
 
   #ifdef HAS_BUTTONS
