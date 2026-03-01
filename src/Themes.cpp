@@ -57,6 +57,7 @@ void ThemeNightLight() {
   #endif
 }
 
+#ifndef IS_NANO
 void ThemeDawn() {
   if (lampState.dawnSecondsGone > 0 && lampState.dawnSecondsGone < lampState.light_interval_s) {
     lampState.dim = themes[Theme_Dawn].DefaultDim;
@@ -73,6 +74,7 @@ void ThemeDawn() {
     #endif
   }
 }
+#endif
 
 void ThemeTwinkle() { 
   if (!lampState.isThemeActive) {
@@ -82,6 +84,7 @@ void ThemeTwinkle() {
   Twinkles(_leds); 
 }
 
+#ifndef IS_NANO
 void ThemeDusk() {
   if (lampState.duskSecondsGone > 0 && lampState.duskSecondsGone < lampState.light_interval_s) {
     lampState.dim = themes[Theme_Dusk].DefaultDim;
@@ -98,6 +101,7 @@ void ThemeDusk() {
     #endif
   }
 }
+#endif
 
 void ThemeWave() {
   if (!lampState.isThemeActive) {
@@ -168,8 +172,12 @@ ThemeEntry themes[themeCount] = {
   { ThemeNightLight,      true,  0.1, "Night Light", "Nachtlicht" },
   { ThemeTwinkle,         true,  0.8, "Twinkle", "Glitzern" },
   { ThemeFire,            true,  0.5, "Fire", "Feuer" },
+  #ifdef IS_NANO
+  // Dawn/Dusk not available on Nano
+  #else
   { ThemeDawn,            true,  1.0, "Dawn", "Morgendämmerung" },
   { ThemeDusk,            true,  1.0, "Dusk", "Abenddämmerung" },
+  #endif
   { ThemeWave,            true,  0.5, "Wave", "Welle" },
   { ThemeRainbow,         true,  0.5, "Rainbow", "Regenbogen" },
   { ThemeConfetti,        true,  0.8, "Confetti", "Konfetti" },
@@ -196,6 +204,7 @@ void setLed(Theme ledTheme) {
   Theme currentTheme = ledTheme;
 
   lampState.isSettingTheme = true;
+  #ifndef IS_NANO
   int second = timeinfo.tm_sec;
   int minute = timeinfo.tm_min;
   int hour = timeinfo.tm_hour;
@@ -209,6 +218,7 @@ void setLed(Theme ledTheme) {
     TRACE("Current Time: " + String(hour) + ":" + String(minute) + ":" + String(second));
   }
 
+  // Dawn/Dusk logic only for ESP32
   if (lampState.dawnDays[weekday]) {
     lampState.dawnSecondsGone = ((hour - lampState.dawn_hour) * 60 + (minute - lampState.dawn_minute)) * 60 + second;
     if (trace) TRACE("Dawn: " + String(lampState.dawn_hour) + ":" + String(lampState.dawn_minute) + " -> Gone: " + String(lampState.dawnSecondsGone));
@@ -232,6 +242,7 @@ void setLed(Theme ledTheme) {
         currentTheme = lampState.duskTheme;
       }
   }
+  #endif // !IS_NANO
   if(lampState.ledThemeLast != currentTheme) {
     TRACE("Theme changed: " + String(lampState.ledThemeLast) + " -> " + String(currentTheme));
     lampState.ledThemeLast = currentTheme;

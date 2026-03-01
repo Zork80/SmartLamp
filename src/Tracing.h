@@ -3,12 +3,15 @@
 
 #include <Arduino.h>
 
-// Forward declaration of the function that performs the actual logging
-extern void mqttLog(String text);
-
 #ifdef DEBUG
-  // In DEBUG mode, log to Serial and MQTT
-  #define TRACE(x) { if(Serial) Serial.println(x); mqttLog(String(x)); }
+  #ifdef IS_NANO
+    // For Nano, just log to Serial
+    #define TRACE(x) { if(Serial) Serial.println(x); }
+  #else
+    // For ESP32, log to Serial and MQTT
+    extern void mqttLog(String text); // Forward declaration for ESP32
+    #define TRACE(x) { if(Serial) Serial.println(x); mqttLog(String(x)); }
+  #endif
 #else
   // In RELEASE mode, do nothing
   #define TRACE(x) {}

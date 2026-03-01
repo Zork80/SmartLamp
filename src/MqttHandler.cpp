@@ -207,7 +207,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   debugBuf[length] = '\0';
   TRACE("MQTT RX: " + String(debugBuf));
 
-  if (doc.containsKey("state")) {
+  if (!doc["state"].isNull()) {
     const char* state = doc["state"];
     bool on = (strcmp(state, "ON") == 0);
 #ifdef ROOFLIGHT
@@ -220,9 +220,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       // If brightness is sent while the lamp is "OFF" (Theme != 0),
       // we assume the user only wants to dim the ambient light.
       // In this case, we do NOT change the theme to 0 (Spot on).
-      bool isDimmingAmbient = doc.containsKey("brightness") && lampState.ledTheme != Theme_Off;
+      bool isDimmingAmbient = !doc["brightness"].isNull() && lampState.ledTheme != Theme_Off;
       // Check if theme will be overwritten by color/effect later in this function
-      bool willSetThemeLater = doc.containsKey("color") || doc.containsKey("effect");
+      bool willSetThemeLater = !doc["color"].isNull() || !doc["effect"].isNull();
 
       if (isDimmingAmbient) {
         TRACE("MQTT: Brightness change while 'OFF' -> Keeping current Theme");
@@ -245,7 +245,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     } else if (lampState.ledTheme == Theme_Off) {
       // State is ON and current theme is OFF
       // Only restore theme if we are not about to set a color or effect
-      if (!doc.containsKey("color") && !doc.containsKey("effect")) {
+      if (doc["color"].isNull() && doc["effect"].isNull()) {
         if (lampState.savedTheme > 0 && lampState.savedTheme < Theme_Count) {
           setLedTheme(lampState.savedTheme);
         } else {
@@ -258,7 +258,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     lampState.isThemeActive = false; // Force LED update
   }
 
-  if (doc.containsKey("brightness")) {
+  if (!doc["brightness"].isNull()) {
     int b = doc["brightness"];
     lampState.dim = (float)b / 255.0;
     // Force update for static themes (like Theme 0 on Rooflight) so brightness is applied
@@ -267,7 +267,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     }
   }
 
-  if (doc.containsKey("color")) {
+  if (!doc["color"].isNull()) {
     lampState.pickedColor.r = doc["color"]["r"];
     lampState.pickedColor.g = doc["color"]["g"];
     lampState.pickedColor.b = doc["color"]["b"];
@@ -275,7 +275,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     setLedTheme(Theme_Selection);
   }
 
-  if (doc.containsKey("effect")) {
+  if (!doc["effect"].isNull()) {
     String effect = doc["effect"];
     // Search index by name
     for(int i=0; i < Theme_Count; i++) {
@@ -335,7 +335,7 @@ void loadMqttConfig() {
     if (file) {
       JsonDocument doc;
       DeserializationError error = deserializeJson(doc, file);
-      if (!error && doc.containsKey("mqttServer")) {
+      if (!error && !doc["mqttServer"].isNull()) {
         mqttServer = doc["mqttServer"].as<String>();
       }
       file.close();
@@ -447,7 +447,7 @@ void registerMqttWebHandlers(AsyncWebServer &server) {
   server.on("/mqtt_config", HTTP_POST, [](AsyncWebServerRequest *request){}, NULL, [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
     JsonDocument doc;
     deserializeJson(doc, data, len);
-    if (doc.containsKey("mqttServer")) {
+    if (!doc["mqttServer"].isNull()) {
       mqttServer = doc["mqttServer"].as<String>();
       saveMqttConfig();
     }

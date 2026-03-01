@@ -3,6 +3,7 @@
 #include "Themes.h" // For setLedTheme
 #include <EEPROM.h>
 
+#ifndef IS_NANO
 byte packDays(bool weekDays[]) {
   byte packedDays = 0;
   for (int i = 0; i < 7; i++) {
@@ -34,8 +35,12 @@ String readString(int add, int maxLen) {
   }
   return data;
 }
+#endif
 
 void saveState() {
+#ifdef IS_NANO
+  EEPROM.put(0, (byte)lampState.ledTheme);
+#else
   TRACE("Save state");
   EEPROM.write(0, (byte)lampState.ledTheme);
   EEPROM.write(1, lampState.pickedColor.r);
@@ -51,9 +56,15 @@ void saveState() {
   writeString(60, wifiPassword);
   writeString(130, hostname);
   EEPROM.commit();
+#endif
 }
 
 void loadState() {
+#ifdef IS_NANO
+  byte val = EEPROM.read(0);
+  if (val >= Theme_Count) val = 0;
+  lampState.ledTheme = (Theme)val;
+#else
   TRACE("Load state");
   #ifdef LOADTHEME
   setLedTheme((Theme)EEPROM.read(0));
@@ -78,8 +89,10 @@ void loadState() {
   if (hostname.length() == 0) {
     hostname = "SmartLamp";
   }
+#endif
 }
 
+#ifndef IS_NANO
 JsonDocument getJsonData() {
   JsonDocument getObject;
   getObject["hour_dawn"] = lampState.dawn_hour;
@@ -99,3 +112,4 @@ JsonDocument getJsonData() {
   // For security reasons, we don't send the password back, or send it empty
   return getObject;
 }
+#endif

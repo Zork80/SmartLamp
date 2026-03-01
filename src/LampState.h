@@ -59,8 +59,13 @@ public:
     CRGB pickedColor = CRGB(0, 0, 255);
     Traced<float> dim{0.2, "dim"};
 
+    #ifdef IS_NANO
+    Theme dawnTheme = Theme_Off; // Dummy value
+    Theme duskTheme = Theme_Off; // Dummy value
+    #else
     Theme dawnTheme = Theme_Dawn;
     Theme duskTheme = Theme_Dusk;
+    #endif
     #ifdef HASPIR
     Theme neutralTheme = Theme_NightLight;
     #else

@@ -12,8 +12,10 @@ enum Theme : byte {
     Theme_NightLight,     // 4
     Theme_Twinkle,        // 5
     Theme_Fire,           // 6
+    #if !defined(IS_NANO)
     Theme_Dawn,           // 7
     Theme_Dusk,           // 8
+    #endif 
     Theme_Wave,           // 9
     Theme_Rainbow,        // 10
     Theme_Confetti,       // 11
