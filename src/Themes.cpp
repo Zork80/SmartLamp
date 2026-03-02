@@ -59,18 +59,20 @@ void ThemeNightLight() {
 
 #ifndef IS_NANO
 void ThemeDawn() {
-  if (lampState.dawnSecondsGone > 0 && lampState.dawnSecondsGone < lampState.light_interval_s) {
+  if (lampState.dawnSecondsGone > 0 && lampState.dawnSecondsGone <= lampState.light_interval_s) {
     lampState.dim = themes[Theme_Dawn].DefaultDim;
-    float dimFactor = lampState.light_interval_s / 255.0;
-    byte dim = 255 - constrain(lampState.dawnSecondsGone / dimFactor, 0, 255);
+    byte dim = 255 - map(lampState.dawnSecondsGone, 0, lampState.light_interval_s, 0, 255);
     _outputString = String("dawnSecondsGone = ") + String(lampState.dawnSecondsGone) + String("; Dim = ") + String(dim);
     _leds.fill_solid(CRGB::White);
     _leds.fadeToBlackBy(dim);
     TRACE(_outputString);
   } else {
+    _outputString = "";
     fill_solid(_leds, NUMPIXELS, off);
     #ifdef HASPIR     
     if(lampState.ledTheme != lampState.neutralTheme) { setLedTheme(lampState.neutralTheme); saveState(); }
+    #else
+    if(lampState.ledTheme != Theme_Off) { setLedTheme(Theme_Off); }
     #endif
   }
 }
@@ -86,18 +88,20 @@ void ThemeTwinkle() {
 
 #ifndef IS_NANO
 void ThemeDusk() {
-  if (lampState.duskSecondsGone > 0 && lampState.duskSecondsGone < lampState.light_interval_s) {
+  if (lampState.duskSecondsGone > 0 && lampState.duskSecondsGone <= lampState.light_interval_s) {
     lampState.dim = themes[Theme_Dusk].DefaultDim;
-    float dimFactor = 255.0 / lampState.light_interval_s;
-    byte dim = constrain(lampState.duskSecondsGone * dimFactor, 0, 255);
+    byte dim = map(lampState.duskSecondsGone, 0, lampState.light_interval_s, 0, 255);
     _outputString = String("duskSecondsGone = ") + String(lampState.duskSecondsGone) + String("; Dim = ") + String(dim);
     _leds.fill_solid(yellow);
     _leds.fadeToBlackBy(dim);
     TRACE(_outputString);
   } else {
+    _outputString = "";
     fill_solid(_leds, NUMPIXELS, off);
     #ifdef HASPIR     
     if(lampState.ledTheme != lampState.neutralTheme) { setLedTheme(lampState.neutralTheme); saveState(); }
+    #else
+    if(lampState.ledTheme != Theme_Off) { setLedTheme(Theme_Off); }
     #endif
   }
 }
@@ -222,8 +226,8 @@ void setLed(Theme ledTheme) {
   if (lampState.dawnDays[weekday]) {
     lampState.dawnSecondsGone = ((hour - lampState.dawn_hour) * 60 + (minute - lampState.dawn_minute)) * 60 + second;
     if (trace) TRACE("Dawn: " + String(lampState.dawn_hour) + ":" + String(lampState.dawn_minute) + " -> Gone: " + String(lampState.dawnSecondsGone));
-    if (lampState.dawnSecondsGone > 0 && lampState.dawnSecondsGone < lampState.light_interval_s)      if (currentTheme != lampState.dawnTheme) {
-        TRACE("Switching to Dawn Theme");
+    if (lampState.dawnSecondsGone > 0 && lampState.dawnSecondsGone <= lampState.light_interval_s + 5)      if (currentTheme != lampState.dawnTheme) {
+        if (lampState.dawnSecondsGone <= lampState.light_interval_s) TRACE("Switching to Dawn Theme");
         if(lampState.ledTheme != lampState.neutralTheme) {
           lampState.ledTheme = lampState.neutralTheme;
         }
@@ -233,9 +237,9 @@ void setLed(Theme ledTheme) {
   if (lampState.duskDays[weekday]) {
     lampState.duskSecondsGone = ((hour - lampState.dusk_hour) * 60 + (minute - lampState.dusk_minute)) * 60 + second;
     if (trace) TRACE("Dusk: " + String(lampState.dusk_hour) + ":" + String(lampState.dusk_minute) + " -> Gone: " + String(lampState.duskSecondsGone));
-    if (lampState.duskSecondsGone > 0 && lampState.duskSecondsGone < lampState.light_interval_s)
+    if (lampState.duskSecondsGone > 0 && lampState.duskSecondsGone <= lampState.light_interval_s + 5)
       if (currentTheme != lampState.duskTheme) {
-        TRACE("Switching to Dusk Theme");
+        if (lampState.duskSecondsGone <= lampState.light_interval_s) TRACE("Switching to Dusk Theme");
         if(lampState.ledTheme != lampState.neutralTheme) {
           lampState.ledTheme = lampState.neutralTheme;
         }
