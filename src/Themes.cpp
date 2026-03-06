@@ -15,6 +15,7 @@ void ThemeOff() {
   #ifdef DOUBLERELAY
   lampState.isSpotlightOn = true;
   #endif
+  delay(20);
 }
 
 void ThemeFire() {
@@ -31,12 +32,13 @@ void ThemeYellowPlusSpot() {
   fill_solid(_leds, NUMPIXELS, yellow2);
   #ifdef DOUBLERELAY
   lampState.isSpotlightOn = true;
-  #endif    
+  #endif
+  delay(20);
 }
 
-void ThemeYellow() { fill_solid(_leds, NUMPIXELS, yellow2); }
-void ThemeYellowWarmWhite() { fill_solid(_leds, NUMPIXELS, warmWhite); }
-void ThemePickedColor() { fill_solid(_leds, NUMPIXELS, lampState.pickedColor); }
+void ThemeYellow() { fill_solid(_leds, NUMPIXELS, yellow2); delay(20);}
+void ThemeYellowWarmWhite() { fill_solid(_leds, NUMPIXELS, warmWhite); delay(20);}
+void ThemePickedColor() { fill_solid(_leds, NUMPIXELS, lampState.pickedColor); delay(20);}
 
 void ThemeNightLight() {
   #ifdef HASPIR
@@ -55,6 +57,7 @@ void ThemeNightLight() {
   #else
   fill_solid(_leds, NUMPIXELS, warmWhiteDark);
   #endif
+  delay(20);
 }
 
 #ifndef IS_NANO
@@ -84,6 +87,7 @@ void ThemeTwinkle() {
     gCurrentPalette = gTargetPalette;
   }
   Twinkles(_leds); 
+  delay(20);
 }
 
 #ifndef IS_NANO
@@ -153,6 +157,34 @@ void ThemeJuggle() {
   delay(10);
 }
 
+void ThemePolice() {
+  static unsigned long lastSwitch = 0;
+  static bool state = false;
+  unsigned long now = millis();
+
+  if (now - lastSwitch > 250) { // Switch every 250ms
+    lastSwitch = now;
+    state = !state;
+  }
+
+  if (STAGES > 1) {
+    for (int i = 0; i < STAGES; i++) {
+      CRGB color = (state == (i % 2 == 0)) ? red : blue;
+      fill_solid(&_leds[i * PIXELSPERSTAGE], PIXELSPERSTAGE, color);
+    }
+  } else { // Original behavior for a single stage
+    int half = NUMPIXELS / 2;
+    if (state) {
+      fill_solid(&_leds[0], half, red);
+      fill_solid(&_leds[half], NUMPIXELS - half, blue);
+    } else {
+      fill_solid(&_leds[0], half, blue);
+      fill_solid(&_leds[half], NUMPIXELS - half, red);
+    }
+  }
+  delay(20);
+}
+
 void ThemeRainbow() {
   counter = (counter + 1) % 256;
   float offset = 256.0 / STAGES;
@@ -161,6 +193,7 @@ void ThemeRainbow() {
   for (int i = STAGES - 1; i >= 0; i--) {
     for(int j = 0; j < PIXELSPERSTAGE; j++) _leds[i*PIXELSPERSTAGE + j] = rb[i];
   }
+  delay(20);
 }
 
 const byte themeCount = Theme_Count;
@@ -186,7 +219,8 @@ ThemeEntry themes[themeCount] = {
   { ThemeRainbow,         true,  0.5, "Rainbow", "Regenbogen" },
   { ThemeConfetti,        true,  0.8, "Confetti", "Konfetti" },
   { ThemeSinelon,         true,  0.8, "Sinelon", "Sinelon" },
-  { ThemeJuggle,          true,  0.8, "Juggle", "Jonglieren" }
+  { ThemeJuggle,          true,  0.8, "Juggle", "Jonglieren" },
+  { ThemePolice,          true,  1.0, "Police", "Polizei" }
 };
 
 void setLedTheme(Theme ledTheme) {

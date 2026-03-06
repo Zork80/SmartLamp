@@ -22,6 +22,7 @@ enum Theme : byte {
     Theme_Confetti,           // 11
     Theme_Sinelon,            // 12
     Theme_Juggle,             // 13
+    Theme_Police,             // 14
     Theme_Count
 };
 
