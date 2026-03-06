@@ -63,6 +63,10 @@ void setup()
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Disable brownout detector
   #endif
 
+  #ifdef HAS_WIFI
+    delay(500);
+  #endif
+
   Serial.begin(MONITOR_SPEED);
 
   #ifdef IS_NANO
@@ -114,6 +118,7 @@ void setup()
 
   loadState();
   setLedTheme(lampState.ledTheme);
+  setLed(lampState.ledTheme);
   TRACE("Starting with Theme: " + String(lampState.ledTheme));
 
   #ifdef HAS_WIFI
