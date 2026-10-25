@@ -7,7 +7,7 @@ The lamp offers a modern web interface for control and configuration and integra
 ## Features
 
 * **Web Interface:** Control all functions via a responsive web interface, accessible from any device on the network.
-* **Dynamic Themes:** 15 built-in themes (e.g., Fire, Wave, Rainbow, Twinkle, Confetti, Sinelon, Police) plus custom color picker.
+* **Dynamic Themes:** 15 built-in themes (e.g., Fire, Wave, Rainbow, Twinkle, Confetti, Sinelon, Witches' Brew) plus custom color picker.
 * **Wake-up & Sleep Timer (Dawn/Dusk):** Simulates a sunrise to wake up gently or a sunset to fall asleep.
 * **Smart Wi-Fi Setup & Auto-Recovery:** Starts in Access Point mode if not configured, and automatically reconnects to home Wi-Fi when the router comes back online.
 * **Flash Wear Protection:** Debounced EEPROM writes to protect the micro-controller flash memory against excessive write cycles.

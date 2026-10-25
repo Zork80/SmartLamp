@@ -165,31 +165,80 @@ void ThemeJuggle() {
   delay(10);
 }
 
-void ThemePolice() {
-  static unsigned long lastSwitch = 0;
-  static bool state = false;
-  unsigned long now = millis();
+void ThemeWitchesBrew() {
+  #ifdef DOUBLERELAY
+  lampState.isSpotlightOn = false; // Spot off for maximum spooky ceiling atmosphere
+  #endif
 
-  if (now - lastSwitch > 250) { // Switch every 250ms
-    lastSwitch = now;
-    state = !state;
+  // 1. Base cauldron potion: Rich, vibrant witch purple / magenta-violet
+  // Using higher hue (210-226) so red LEDs are strong and vibrant (not cold blue!)
+  uint16_t noiseSpeed = millis() / 14;
+  for (int i = 0; i < NUMPIXELS; i++) {
+    // Spatial noise creates smooth swirling gradients across the ceiling
+    uint8_t n = inoise8(i * 45, noiseSpeed);
+    // Rich Hexen-Violett: Hue 212 to 228, full saturation 255
+    uint8_t hue = 212 + scale8(n, 16); 
+    // Powerful brightness: 110 to 220 (plenty of light thrown onto the ceiling)
+    uint8_t bri = map(n, 0, 255, 110, 220);
+    _leds[i] = CHSV(hue, 255, bri);
   }
 
-  if (STAGES > 1) {
-    for (int i = 0; i < STAGES; i++) {
-      CRGB color = (state == (i % 2 == 0)) ? red : blue;
-      fill_solid(&_leds[i * PIXELSPERSTAGE], PIXELSPERSTAGE, color);
-    }
-  } else { // Original behavior for a single stage
-    int half = NUMPIXELS / 2;
-    if (state) {
-      fill_solid(&_leds[0], half, red);
-      fill_solid(&_leds[half], NUMPIXELS - half, blue);
-    } else {
-      fill_solid(&_leds[0], half, blue);
-      fill_solid(&_leds[half], NUMPIXELS - half, red);
+  // 2. Toxic Green Bubbles that emerge, grow, pop, and dissolve into the potion
+  struct Bubble {
+    int pos;          // LED index
+    uint8_t stage;    // 0 = inactive, >0 active timer
+    uint8_t maxStage; // Total lifetime in frames
+    uint8_t maxBri;   // Peak brightness
+  };
+  static Bubble bubbles[4] = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+
+  // Spawn new bubble (~20% chance per frame for active bubbling)
+  if (random8(100) < 20) {
+    for (int b = 0; b < 4; b++) {
+      if (bubbles[b].stage == 0) {
+        bubbles[b].pos = random16(NUMPIXELS);
+        bubbles[b].stage = 1;
+        bubbles[b].maxStage = random8(16, 32); // Snappy ~320ms to 640ms bubble pop
+        bubbles[b].maxBri = random8(220, 255); // Full power
+        break;
+      }
     }
   }
+
+  // Render & advance active bubbles using blend() instead of += to keep toxic green pure!
+  for (int b = 0; b < 4; b++) {
+    if (bubbles[b].stage > 0) {
+      uint8_t progress = map(bubbles[b].stage, 1, bubbles[b].maxStage, 0, 255);
+      
+      // Fast attack, bright pop, and decay
+      uint8_t bBri = 0;
+      if (progress < 140) {
+        // Swelling and popping
+        bBri = map(progress, 0, 140, 60, bubbles[b].maxBri);
+      } else {
+        // Rapid dissolving
+        bBri = map(progress, 140, 255, bubbles[b].maxBri, 0);
+      }
+
+      // Pure Toxic Slime Green (Hue 96) and Chartreuse/Lime Pop core (Hue 84)
+      CRGB toxicGreen = (progress > 100 && progress < 160) ? CHSV(84, 255, 255) : CHSV(96, 255, 255);
+
+      int center = bubbles[b].pos;
+      int left   = (center - 1 + NUMPIXELS) % NUMPIXELS;
+      int right  = (center + 1) % NUMPIXELS;
+
+      // OVERWRITE / BLEND: cleanly replaces the purple with pure toxic green without mixing into cyan!
+      _leds[center] = blend(_leds[center], toxicGreen, bBri);
+      _leds[left]   = blend(_leds[left],   toxicGreen, scale8(bBri, 150));
+      _leds[right]  = blend(_leds[right],  toxicGreen, scale8(bBri, 150));
+
+      bubbles[b].stage++;
+      if (bubbles[b].stage >= bubbles[b].maxStage) {
+        bubbles[b].stage = 0;
+      }
+    }
+  }
+
   delay(20);
 }
 
@@ -228,7 +277,7 @@ ThemeEntry themes[themeCount] = {
   { ThemeConfetti,        true,  0.8, "Confetti", "Konfetti" },
   { ThemeSinelon,         true,  0.8, "Sinelon", "Sinelon" },
   { ThemeJuggle,          true,  0.8, "Juggle", "Jonglieren" },
-  { ThemePolice,          true,  1.0, "Police", "Polizei" }
+  { ThemeWitchesBrew,     true,  1.0, "Witches' Brew", "Hexenkessel" }
 };
 
 void setLedTheme(Theme ledTheme) {
