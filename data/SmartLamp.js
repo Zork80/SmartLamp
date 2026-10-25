@@ -36,11 +36,12 @@ function unpackDays(packedDays, weekDays) {
 function valueChanged(iD) {
   switch (iD) {
     case 'NEXT':
+      var maxTheme = (themes && themes.length > 0) ? themes.length - 1 : 14;
       var newValue = myOldActuals.theme + 1;
       if (newValue == 7) {
         newValue = 9;
       }
-      if (newValue > 10) {
+      if (newValue > maxTheme) {
         newValue = 0;
       }
       if (!isNaN(newValue))
@@ -49,12 +50,13 @@ function valueChanged(iD) {
         });
       break;
     case 'PREV':
+      var maxTheme = (themes && themes.length > 0) ? themes.length - 1 : 14;
       var newValue = myOldActuals.theme - 1;
       if (newValue == 8) {
         newValue = 6;
       }
       if (newValue < 0) {
-        newValue = 10;
+        newValue = maxTheme;
       }
       if (!isNaN(newValue))
         setTimeValues({
@@ -298,7 +300,7 @@ function makeTheCall() {
       myOldActuals = myActuals;
     };
 
-    setTimeout(makeTheCall, 200);
+    setTimeout(makeTheCall, 1500);
   }).fail(function() {
     setTimeout(makeTheCall, 2000);
   })
@@ -323,7 +325,7 @@ function debugCall() {
       document.getElementById('DEBUG').innerHTML = data;
     };
 
-    setTimeout(debugCall, 200);
+    setTimeout(debugCall, 1500);
   })
 }
 

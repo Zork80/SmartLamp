@@ -36,11 +36,16 @@ void handle_rest(AsyncWebServerRequest *request, uint8_t *data, size_t len, size
       if (postObj["do_dawn"].is<int>()) unpackDays((byte)postObj["do_dawn"], lampState.dawnDays);
       if (postObj["do_dusk"].is<int>()) unpackDays((byte)postObj["do_dusk"], lampState.duskDays);
       
+      bool isCriticalNetConfig = postObj["ssid"].is<String>() || postObj["password"].is<String>() || postObj["hostname"].is<String>();
       if (postObj["ssid"].is<String>()) wifiSsid = postObj["ssid"].as<String>();
       if (postObj["password"].is<String>()) wifiPassword = postObj["password"].as<String>();
       if (postObj["hostname"].is<String>()) hostname = postObj["hostname"].as<String>();
       
-      saveState();
+      if (isCriticalNetConfig) {
+        saveState();
+      } else {
+        saveStateDebounced();
+      }
     }
     JsonDocument getObject = getJsonData();
     char buffer[512];
@@ -56,7 +61,7 @@ void handle_rest(AsyncWebServerRequest *request, uint8_t *data, size_t len, size
 
 void handle_read(AsyncWebServerRequest *request) {
   JsonDocument getObject = getJsonData();
-  char buffer[256];
+  char buffer[512];
   serializeJson(getObject, buffer);
   request->send(200, "text/json", buffer);
 }

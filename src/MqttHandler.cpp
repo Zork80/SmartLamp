@@ -355,6 +355,7 @@ void saveMqttConfig() {
 }
 
 void reconnectMqtt() {
+  if (mqttServer.length() == 0) return;
   if (!mqttClient.connected()) {
     String chipId = getChipId();
     String clientId = "SmartLamp-" + chipId;
@@ -388,6 +389,7 @@ void reconnectMqtt() {
 void setupMqtt() {
   loadMqttConfig(); // IMPORTANT: Load first, then set server!
   
+  espClient.setTimeout(2);
   mqttClient.setServer(mqttServer.c_str(), MQTT_PORT);
   mqttClient.setCallback(mqttCallback);
   
@@ -396,10 +398,10 @@ void setupMqtt() {
 }
 
 void loopMqtt() {
-  if (WiFi.status() == WL_CONNECTED) {
+  if (WiFi.status() == WL_CONNECTED && mqttServer.length() > 0) {
     if (!mqttClient.connected()) {
       static unsigned long lastMqttAttempt = 0;
-      if (millis() - lastMqttAttempt > 5000) {
+      if (millis() - lastMqttAttempt > 10000) {
         lastMqttAttempt = millis();
         reconnectMqtt();
       }

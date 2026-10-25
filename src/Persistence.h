@@ -6,6 +6,8 @@
 #endif
 
 void saveState();
+void saveStateDebounced();
+void loopPersistence();
 void loadState();
 #ifndef IS_NANO
 byte packDays(bool weekDays[]);

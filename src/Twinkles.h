@@ -8,11 +8,11 @@ extern CRGBPalette16 gCurrentPalette;
 extern CRGBPalette16 gTargetPalette;
 
 // Vorwärtsdeklarationen der Funktionen
-void chooseNextColorPalette( CRGBPalette16& pal);
-void drawTwinkles( CRGBSet& L);
-CRGB computeOneTwinkle( uint32_t ms, uint8_t salt);
-uint8_t attackDecayWave8( uint8_t i);
-void coolLikeIncandescent( CRGB& c, uint8_t phase);
+static inline void chooseNextColorPalette( CRGBPalette16& pal);
+static inline void drawTwinkles( CRGBSet& L);
+static inline CRGB computeOneTwinkle( uint32_t ms, uint8_t salt);
+static inline uint8_t attackDecayWave8( uint8_t i);
+static inline void coolLikeIncandescent( CRGB& c, uint8_t phase);
 
 // Overall twinkle speed.
 // 0 (VERY slow) to 8 (VERY fast).  
@@ -33,7 +33,7 @@ void coolLikeIncandescent( CRGB& c, uint8_t phase);
 
 // Background color for 'unlit' pixels
 // Can be set to CRGB::Black if desired.
-CRGB gBackgroundColor = CRGB::Black; 
+static CRGB gBackgroundColor = CRGB::Black; 
 // Example of dim incandescent fairy light background color
 // CRGB gBackgroundColor = CRGB(CRGB::FairyLight).nscale8_video(16);
 
@@ -51,7 +51,7 @@ CRGB gBackgroundColor = CRGB::Black;
 
 
 // Geändert: Nimmt nun das LED-Array als Parameter entgegen
-void Twinkles(CRGBSet& L)
+static inline void Twinkles(CRGBSet& L)
 {
   EVERY_N_SECONDS( SECONDS_PER_PALETTE ) { 
     chooseNextColorPalette( gTargetPalette ); 
@@ -69,7 +69,7 @@ void Twinkles(CRGBSet& L)
 //  "CalculateOneTwinkle" on each pixel.  It then displays
 //  either the twinkle color of the background color, 
 //  whichever is brighter.
-void drawTwinkles( CRGBSet& L)
+static inline void drawTwinkles( CRGBSet& L)
 {
   // "PRNG16" is the pseudorandom number generator
   // It MUST be reset to the same starting value each time
@@ -143,7 +143,7 @@ void drawTwinkles( CRGBSet& L)
 //  of one cycle of the brightness wave function.
 //  The 'high digits' are also used to determine whether this pixel
 //  should light at all during this cycle, based on the TWINKLE_DENSITY.
-CRGB computeOneTwinkle( uint32_t ms, uint8_t salt)
+static inline CRGB computeOneTwinkle( uint32_t ms, uint8_t salt)
 {
   uint16_t ticks = ms >> (8-TWINKLE_SPEED);
   uint8_t fastcycle8 = ticks;
@@ -181,7 +181,7 @@ CRGB computeOneTwinkle( uint32_t ms, uint8_t salt)
 //  /             \ 
 //
 
-uint8_t attackDecayWave8( uint8_t i)
+static inline uint8_t attackDecayWave8( uint8_t i)
 {
   if( i < 86) {
     return i * 3;
@@ -194,7 +194,7 @@ uint8_t attackDecayWave8( uint8_t i)
 // This function takes a pixel, and if its in the 'fading down'
 // part of the cycle, it adjusts the color a little bit like the 
 // way that incandescent bulbs fade toward 'red' as they dim.
-void coolLikeIncandescent( CRGB& c, uint8_t phase)
+static inline void coolLikeIncandescent( CRGB& c, uint8_t phase)
 {
   if( phase < 128) return;
 
@@ -283,7 +283,7 @@ const TProgmemRGBPalette16 Ice_p FL_PROGMEM =
 
 // Add or remove palette names from this list to control which color
 // palettes are used, and in what order.
-const TProgmemRGBPalette16* ActivePaletteList[] = {
+static const TProgmemRGBPalette16* const ActivePaletteList[] = {
   &RetroC9_p,
   &BlueWhite_p,
   &RainbowColors_p,
@@ -298,7 +298,7 @@ const TProgmemRGBPalette16* ActivePaletteList[] = {
 
 
 // Advance to the next color palette in the list (above).
-void chooseNextColorPalette( CRGBPalette16& pal)
+static inline void chooseNextColorPalette( CRGBPalette16& pal)
 {
   const uint8_t numberOfPalettes = sizeof(ActivePaletteList) / sizeof(ActivePaletteList[0]);
   static uint8_t whichPalette = -1; 

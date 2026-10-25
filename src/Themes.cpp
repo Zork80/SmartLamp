@@ -68,7 +68,11 @@ void ThemeDawn() {
     _outputString = String("dawnSecondsGone = ") + String(lampState.dawnSecondsGone) + String("; Dim = ") + String(dim);
     _leds.fill_solid(CRGB::White);
     _leds.fadeToBlackBy(dim);
-    TRACE(_outputString);
+    static int lastLoggedDawnSec = -1;
+    if (lampState.dawnSecondsGone != lastLoggedDawnSec && lampState.dawnSecondsGone % 10 == 0) {
+      lastLoggedDawnSec = lampState.dawnSecondsGone;
+      TRACE(_outputString);
+    }
   } else {
     _outputString = "";
     fill_solid(_leds, NUMPIXELS, off);
@@ -98,7 +102,11 @@ void ThemeDusk() {
     _outputString = String("duskSecondsGone = ") + String(lampState.duskSecondsGone) + String("; Dim = ") + String(dim);
     _leds.fill_solid(yellow);
     _leds.fadeToBlackBy(dim);
-    TRACE(_outputString);
+    static int lastLoggedDuskSec = -1;
+    if (lampState.duskSecondsGone != lastLoggedDuskSec && lampState.duskSecondsGone % 10 == 0) {
+      lastLoggedDuskSec = lampState.duskSecondsGone;
+      TRACE(_outputString);
+    }
   } else {
     _outputString = "";
     fill_solid(_leds, NUMPIXELS, off);

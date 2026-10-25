@@ -229,6 +229,10 @@ unsigned long interval = 30000;
 
 void loop()
 {
+  #ifndef IS_NANO
+    loopPersistence();
+  #endif
+
   #ifdef HAS_WIFI
     if (!isApMode && WiFi.status() != WL_CONNECTED) {
       unsigned long currentMillis = millis();
@@ -236,6 +240,26 @@ void loop()
         previousMillis = currentMillis;
         WiFi.disconnect();
         WiFi.reconnect();
+      }
+    } else if (isApMode && wifiSsid.length() > 0) {
+      unsigned long currentMillis = millis();
+      if (currentMillis - previousMillis >= interval) {
+        previousMillis = currentMillis;
+        TRACE("AP Mode: Checking if configured Wi-Fi is reachable...");
+        WiFi.mode(WIFI_AP_STA);
+        WiFi.begin(wifiSsid.c_str(), wifiPassword.c_str());
+        int retries = 0;
+        while (WiFi.status() != WL_CONNECTED && retries < 15) {
+          delay(200);
+          retries++;
+        }
+        if (WiFi.status() == WL_CONNECTED) {
+          TRACE("Wi-Fi restored! Exiting AP Mode. Local IP: " + WiFi.localIP().toString());
+          WiFi.mode(WIFI_STA);
+          isApMode = false;
+        } else {
+          WiFi.mode(WIFI_AP);
+        }
       }
     } else if (!isApMode && WiFi.status() == WL_CONNECTED) {
       // MQTT Loop and Reconnect
@@ -306,7 +330,7 @@ void loop()
     if (timeCounter > 10) {
       timeCounter = 0;
       struct tm timeinfo_tmp;
-      if (getLocalTime(&timeinfo_tmp)) {
+      if (getLocalTime(&timeinfo_tmp, 0)) {
         timeinfo = timeinfo_tmp;
       }
     }

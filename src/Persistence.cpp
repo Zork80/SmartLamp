@@ -37,10 +37,35 @@ String readString(int add, int maxLen) {
 }
 #endif
 
+#ifndef IS_NANO
+static bool isPersistenceDirty = false;
+static unsigned long persistenceDirtyTimestamp = 0;
+const unsigned long PERSISTENCE_DEBOUNCE_MS = 2500;
+#endif
+
+void saveStateDebounced() {
+#ifdef IS_NANO
+  saveState();
+#else
+  isPersistenceDirty = true;
+  persistenceDirtyTimestamp = millis();
+#endif
+}
+
+void loopPersistence() {
+#ifndef IS_NANO
+  if (isPersistenceDirty && (millis() - persistenceDirtyTimestamp >= PERSISTENCE_DEBOUNCE_MS)) {
+    isPersistenceDirty = false;
+    saveState();
+  }
+#endif
+}
+
 void saveState() {
 #ifdef IS_NANO
   EEPROM.put(0, (byte)lampState.ledTheme);
 #else
+  isPersistenceDirty = false;
   TRACE("Save state");
   EEPROM.write(0, (byte)lampState.ledTheme);
   EEPROM.write(1, lampState.pickedColor.r);
@@ -52,6 +77,7 @@ void saveState() {
   EEPROM.write(7, (byte)lampState.dawn_minute);
   EEPROM.write(8, (byte)lampState.dusk_hour);
   EEPROM.write(9, (byte)lampState.dusk_minute);
+  EEPROM.write(10, (byte)((float)lampState.dim * 255));
   writeString(20, wifiSsid);
   writeString(60, wifiPassword);
   writeString(130, hostname);
@@ -62,12 +88,26 @@ void saveState() {
 void loadState() {
 #ifdef IS_NANO
   byte val = EEPROM.read(0);
-  if (val >= Theme_Count) val = 0;
-  lampState.ledTheme = (Theme)val;
+  if (val < Theme_Count && val != (byte)Theme_Off) {
+    lampState.savedTheme = (Theme)val;
+  }
+  #if defined(RESTORE_THEME_ON_BOOT) || defined(LOADTHEME)
+  lampState.ledTheme = (val < Theme_Count) ? (Theme)val : Theme_Off;
+  #else
+  lampState.ledTheme = Theme_Off;
+  #endif
 #else
   TRACE("Load state");
-  #ifdef LOADTHEME
-  setLedTheme((Theme)EEPROM.read(0));
+  byte themeVal = EEPROM.read(0);
+  if (themeVal < Theme_Count && themeVal != (byte)Theme_Off) {
+    lampState.savedTheme = (Theme)themeVal;
+  }
+  #if defined(RESTORE_THEME_ON_BOOT) || defined(LOADTHEME)
+  if (themeVal < Theme_Count) {
+    setLedTheme((Theme)themeVal);
+  } else {
+    setLedTheme(Theme_Off);
+  }
   #else
   setLedTheme(Theme_Off);
   #endif
@@ -80,6 +120,15 @@ void loadState() {
   lampState.dawn_minute = EEPROM.read(7);
   lampState.dusk_hour = EEPROM.read(8);
   lampState.dusk_minute = EEPROM.read(9);
+  if (lampState.dawn_hour > 23) lampState.dawn_hour = 6;
+  if (lampState.dawn_minute > 59) lampState.dawn_minute = 0;
+  if (lampState.dusk_hour > 23) lampState.dusk_hour = 22;
+  if (lampState.dusk_minute > 59) lampState.dusk_minute = 0;
+
+  byte dimVal = EEPROM.read(10);
+  if (dimVal > 0 && (dimVal != 255 || EEPROM.read(6) <= 23)) {
+    lampState.dim = (float)dimVal / 255.0;
+  }
   lampState.pickedColor = CRGB(r, g, b);
   
   wifiSsid = readString(20, 32);
