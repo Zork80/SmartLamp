@@ -41,32 +41,41 @@ PRESETS = {
         'input': 'NASA_Moon_512px.png',
         'output': 'Moon.stl',
         'dia': 116.0,
-        'wall': 2.0,
-        'inner_depth': 2.2,
+        'wall': 2.56,
+        'inner_depth': 1.76,
         'outer_depth': 0.0,
+        'invert': True,
+        'normalize': True,
     },
     'earth': {
         'input': 'NASA_WorldMap_1024px.png',
         'output': 'Earth.stl',
         'dia': 116.0,
-        'wall': 2.0,
-        'inner_depth': 2.2,
+        'wall': 2.56,
+        'inner_depth': 1.76,
         'outer_depth': 0.0,
+        'invert': False,
+        'normalize': False,
     },
     'mars': {
         'input': 'mars_1k_topo.jpg',
         'output': 'Mars.stl',
         'dia': 116.0,
-        'wall': 2.0,
-        'inner_depth': 2.2,
+        'wall': 2.56,
+        'inner_depth': 1.76,
         'outer_depth': 0.0,
+        'invert': True,
+        'normalize': True,
     },
 }
 
 def resolve_path(filename):
-    if not os.path.isabs(filename):
-        return os.path.join(script_dir, filename)
-    return filename
+    if os.path.isabs(filename):
+        return filename
+    parent = os.path.dirname(filename)
+    if os.path.exists(filename) or (parent and os.path.exists(parent)):
+        return os.path.abspath(filename)
+    return os.path.join(script_dir, filename)
 
 def long(vector, longsteps):
     if vector[0] > 0:
@@ -292,8 +301,13 @@ def geodesic_mesh(freq, pix, longsteps, latsteps, outer_radius, inner_radius, ou
             j = j + 1
     return obj
 
-def generate_mesh(mapfilename, savefilename, dia=116.0, wall=2.0, inner_depth=2.2, outer_depth=0.0, freq=200, normalize=False, invert=False, progress=True):
+def generate_mesh(mapfilename, savefilename, dia=116.0, wall=2.56, inner_depth=1.76, outer_depth=0.0, freq=200, normalize=False, invert=False, progress=True):
     check_dependencies()
+    if inner_depth + outer_depth >= wall:
+        raise ValueError(
+            f"Total carving depth (inner={inner_depth} + outer={outer_depth} = {inner_depth + outer_depth:.2f} mm) "
+            f"must be strictly less than wall thickness ({wall:.2f} mm) to prevent the inner shell from punching through the outer shell!"
+        )
     in_path = resolve_path(mapfilename)
     out_path = resolve_path(savefilename)
 
@@ -365,14 +379,14 @@ def main():
     parser.add_argument(
         "-w", "--wall",
         type=float,
-        default=2.0,
-        help="Undisturbed wall thickness in mm (default: 2.0)"
+        default=2.56,
+        help="Undisturbed wall thickness in mm (default: 2.56)"
     )
     parser.add_argument(
         "--inner-depth",
         type=float,
-        default=2.2,
-        help="Carving depth on the inside in mm (default: 2.2)"
+        default=1.76,
+        help="Carving depth on the inside in mm (default: 1.76)"
     )
     parser.add_argument(
         "--outer-depth",
@@ -411,6 +425,9 @@ def main():
     inner_depth = args.inner_depth
     outer_depth = args.outer_depth
 
+    invert = args.invert
+    normalize = args.normalize
+
     if args.preset:
         preset = PRESETS[args.preset]
         if not mapfilename:
@@ -419,17 +436,25 @@ def main():
             savefilename = preset['output']
         if args.dia == 116.0:
             dia = preset['dia']
-        if args.wall == 2.0:
+        if args.wall == 2.56:
             wall = preset['wall']
-        if args.inner_depth == 2.2:
+        if args.inner_depth == 1.76:
             inner_depth = preset['inner_depth']
         if args.outer_depth == 0.0:
             outer_depth = preset['outer_depth']
+        if not args.invert and 'invert' in preset:
+            invert = preset['invert']
+        if not args.normalize and 'normalize' in preset:
+            normalize = preset['normalize']
     elif not mapfilename:
         print("No input or preset specified. Defaulting to '--preset moon'. Use -h for help.")
         preset = PRESETS['moon']
         mapfilename = preset['input']
         savefilename = savefilename or preset['output']
+        if not args.invert and 'invert' in preset:
+            invert = preset['invert']
+        if not args.normalize and 'normalize' in preset:
+            normalize = preset['normalize']
 
     if not savefilename:
         base = os.path.splitext(os.path.basename(mapfilename))[0]
@@ -445,8 +470,8 @@ def main():
         inner_depth=inner_depth,
         outer_depth=outer_depth,
         freq=args.freq,
-        normalize=args.normalize,
-        invert=args.invert,
+        normalize=normalize,
+        invert=invert,
         progress=progress
     )
 

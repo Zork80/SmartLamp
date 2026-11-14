@@ -9,10 +9,11 @@ doBulb = true;
 
 // Board Selection
 esp_model = "DevKit"; // [DevKit, C6_Mini]
-Scene = "Moon"; // [Moon, Earth, Mars, RingOnly]
+Scene = "Moon"; // [Moon, Earth, Mars, Smooth, RingOnly]
 pattern_dir = "patterns/"; // Subfolder containing pattern STL files
+bulb_wall = 1.6; // Wall thickness for Smooth bulb in mm
 
-hasDisplay = true; // Toggle OLED support
+hasDisplay = false; // Toggle OLED support (WIP)
 
 // --- GEOMETRIC PARAMETERS ---
 LED_diameter = 86;
@@ -23,9 +24,9 @@ wTh = 2;
 bottomHeight = 33;
 height = 4;
 groove = 2;
-inchIn_mm = 25.4;
 
 /* [Hidden] */
+inchIn_mm = 25.4;
 $fn = (mode == "print") ? 150 : 50;
 isPrintMode = (mode == "print");
 outerD2 = outerD - 3;
@@ -247,6 +248,11 @@ module bulb() {
                                 import(str(pattern_dir, "Earth.stl"));
                             else if(Scene == "Mars")
                                 import(str(pattern_dir, "Mars.stl"));
+                            else if(Scene == "Smooth")
+                                difference() {
+                                    sphere(d = 116);
+                                    sphere(d = 116 - 2 * bulb_wall);
+                                }
                         }
                         // Flatten bottom for ring mount
                         translate([0,0,-28])

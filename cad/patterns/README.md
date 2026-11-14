@@ -64,16 +64,16 @@ You can run the script from any directory; output STL files are saved directly i
 python cad/patterns/geodesic_mapped_double.py --preset moon --freq 25 -o Moon_preview.stl
 
 # Custom heightmap image and dimensions
-python cad/patterns/geodesic_mapped_double.py -i my_map.png -o Custom.stl --dia 116 --wall 2.0 --inner-depth 2.2 --invert --normalize
+python cad/patterns/geodesic_mapped_double.py -i my_map.png -o Custom.stl --dia 116 --wall 2.56 --inner-depth 1.76 --invert --normalize
 ```
 
 Available options (`python cad/patterns/geodesic_mapped_double.py --help`):
-* `-p, --preset {moon,earth,mars}`: Select predefined texture map and output filename.
+* `-p, --preset {moon,earth,mars}`: Select predefined texture map and output filename (presets include automatic inversion & normalization where appropriate).
 * `-i, --input INPUT`: Input grayscale image path.
 * `-o, --output OUTPUT`: Output STL file path.
 * `-d, --dia DIA`: Outer diameter in mm (default: 116.0).
-* `-w, --wall WALL`: Base wall thickness in mm (default: 2.0).
-* `--inner-depth`: Carving depth on inside in mm (default: 2.2).
+* `-w, --wall WALL`: Base wall thickness in mm (default: 2.56).
+* `--inner-depth`: Carving depth on inside in mm (default: 1.76, guaranteeing a minimum solid wall of 0.8 mm).
 * `--outer-depth`: Carving depth on outside in mm (default: 0.0).
 * `-f, --freq FREQ`: Subdivision factor / mesh resolution (default: 200; use 20–50 for quick test renders).
 * `-n, --normalize`: Automatically stretch/normalize the heightmap dynamic range to the full 0–255 scale (useful for low-contrast images).
@@ -90,6 +90,11 @@ else if(Scene == "Earth")
     import(str(pattern_dir, "Earth.stl"));
 else if(Scene == "Mars")
     import(str(pattern_dir, "Mars.stl"));
+else if(Scene == "Smooth")
+    difference() {
+        sphere(d = 116);
+        sphere(d = 116 - 2 * bulb_wall);
+    }
 ```
 
 > [!IMPORTANT]
