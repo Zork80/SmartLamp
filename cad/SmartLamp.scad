@@ -1,411 +1,187 @@
-//Render mode
-mode = "assembly"; //[print,assembly]
+// --- Configuration ---
+mode = "print"; // [print, assembly]
 
-//Render the case
+// Render parts individually
 doCase = true;
-//Render the bottom
 doBottom = true;
-//Render the caddy
 doCaddy = true;
-//Render the bulp
-doBulp = true;
+doBulb = true;
 
-//Diameter of the LED ring (e.g. 66 or 86)
-LED_diameter = 66;
-//Widht of the LED ring (e.g. 6 or 7)
-LED_width = 6;
+// Board Selection
+esp_model = "DevKit"; // [DevKit, C6_Mini]
+Scene = "Moon"; // [Moon, Earth, Mars, RingOnly]
+pattern_dir = "patterns/"; // Subfolder containing pattern STL files
 
-Scene = "Moon"; // [Moon,Earth]
+hasDisplay = true; // Toggle OLED support
 
-/* [Hidden] */
-$fn = mode=="print"?250:50;
-
-isPrintMode = mode=="print";
-
-inchIn_mm = 25.4;
-
+// --- GEOMETRIC PARAMETERS ---
+LED_diameter = 86;
+LED_width = 7;      
 tolerance = 1;
-
-//innerD1 = 72 - tolerance;
-//innerD2 = 86 + tolerance;
-innerD1 = LED_diameter - (2 * LED_width) - tolerance;
-innerD2 = LED_diameter + tolerance;
 outerD = 96;
-outerD2 = outerD -3;
-outerD3 = outerD -8;
-
-
-rSphere = (outerD3 + 20) / 2;
-
+wTh = 2;
+bottomHeight = 33;
 height = 4;
 groove = 2;
+inchIn_mm = 25.4;
 
-bottomHeight = 33;
+/* [Hidden] */
+$fn = (mode == "print") ? 150 : 50;
+isPrintMode = (mode == "print");
+outerD2 = outerD - 3;
+outerD3 = outerD - 8;
+rSphere = (outerD3 + 20) / 2;
 
-wTh = 2;
-wBar = 10;
+// Calculation of LED ring dimensions
+innerD1 = LED_diameter - (2 * LED_width) - tolerance;
+innerD2 = LED_diameter + tolerance;
 
-if (doBottom)
-{
+// Board data: [length, width, height, USB width, pin_offset]
+board_configs = (esp_model == "C6_Mini") 
+    ? [26.5, 18.0, 4.5, 9, 1.5]  // C6_Mini: 1.5mm offset
+    : [55.2, 28.2, 4.5, 9, 2.0]; // DevKit: 2.0mm offset
+
+b_len      = board_configs[0];
+b_wid      = board_configs[1];
+b_hgt      = board_configs[2];
+usb_w      = board_configs[3];
+pin_offset = board_configs[4]; 
+
+t_w = b_wid + 0.8;
+caddy_cut_x = 17 + 3; 
+offset_x = caddy_cut_x - (b_len / 2) - wTh;
+
+// OLED Parameters (SSD1306 0.96")
+oled_w = 27.8; 
+oled_h = 27.3;
+oled_screen_w = 22; // Visible display area
+oled_screen_h = 11; // Visible display area
+
+
+// --- START OF LOGIC ---
+
+if (doBottom) {
     bottom();    
 }
 
-iterator1 = doBottom ? 1: 0;
-iterator2 = doCase ? iterator1 + 1: iterator1;
-iterator3 = doCaddy ? iterator2 + 1: iterator2;
+iterator1 = doBottom ? 1 : 0;
+iterator2 = doCase ? iterator1 + 1 : iterator1;
+iterator3 = doCaddy ? iterator2 + 1 : iterator2;
 
 translateCase = isPrintMode ? [0,0,0] : [0,0,2];
 
-translate(translateCase)
-{
-    if (doCase)
+translate(translateCase) {
+    // --- CASE ---
+    if (doCase) {
         if(isPrintMode)
-            translate([iterator1 * (outerD + 10),0,37])
-                rotate([180,0,0])
-                    case();
+            translate([iterator1 * (outerD + 15), 0, bottomHeight + height])
+                rotate([180,0,0]) case();
         else
             case();
+    }
 
-
-
-    if (doCaddy)
-    {       
-        if(isPrintMode)
-        {
-            translate([iterator2 * (outerD + 10),0,0])
-            {
-                rotate([0,0,180])
-                    caddy();
-
-                translate([-30, -30, 0])
-                    rotate([0,0,90])
-                        bar();
+    // --- CADDY ---
+    if (doCaddy) {
+        if (isPrintMode) {
+            translate([iterator2 * (outerD + 15), 0, 0]) {
+                rotate([0, 0, 180]) caddy();
             }
-        }
-        else
-        {
-            translate([0,0,18])
-            {
-                rotate([180,0,0])
-                    caddy();
-
-                translate([-43,-6.5,-14.9])
-                        bar();
+        } else {
+            translate([0, 0, 18]) {
+                rotate([180, 180, 180]) caddy();
             }
         }
     }
     
-    if (doBulp)
+    // --- BULB ---
+    if (doBulb) {
         if(isPrintMode)
-            translate([iterator3 * (outerD + 10),0,-23])
-                bulp();
+            translate([iterator3 * (outerD + 15), 0, -22])
+                rotate([0,0,0]) bulb();
         else
-            translate([0,0,11])
-                bulp();
-}
-
-// rotate as per a, v, but around point pt
-module rotate_about_pt(a, v, pt) {
-    translate(pt)
-        rotate(a,v)
-            translate(-pt)
-                children();   
-}
-
-module case() {
-    difference() {
-        union() {
-            difference() {
-                difference() {
-                    linear_extrude(bottomHeight) {
-                        circle(d=outerD);
-                    }
-                    linear_extrude(bottomHeight - 1) {
-                        circle(d=outerD2);                              
-                    }
-                }            
-                
-                translate([outerD2/2 -2,0,2]) {
-                    rotate([0,90,0]) {
-                        cylinder(h=6,d=5);
-                    }
-                    translate([1,-2.5,-5])
-                        cube([5,5,5]);
-                }
-            }
-            translate([0,0,bottomHeight]){
-                difference() {
-                    linear_extrude(height) {
-                        circle(d=outerD3);
-                    }
-                    translate([0,0,height-groove]) {
-                        linear_extrude(groove) {
-                            difference() {
-                                circle(d=innerD2);
-                                circle(d=innerD1);
-                            }        
-                        }
-                    }
-                }
-            }
-
-            translate([0,0,bottomHeight]) {
-                mirror([0,0,1])
-                {
-                    postHole(-27, 34, 15);
-                    postHole(-27, -34, 15);
-                    postHole(17, -40, 15);
-                    postHole(17, 40, 15);
-                    postHole(-43.5, 0, 15);        
-                }
-            }
-        }
-        
-        translate([0,0,bottomHeight - 1]){
-            difference() {               
-                difference() {
-                    linear_extrude(height + 2) {
-                        union() {
-                            slice(r=innerD2/2, a1=0, a2=10);
-                            slice(r=innerD2/2, a1=350, a2=360);
-                        }
-                    }
-                    linear_extrude(height + 2) {
-                        union() {
-                            slice(r=innerD1/2, a1=0, a2=10);
-                            slice(r=innerD1/2, a1=350, a2=360);
-                        }
-                    }
-                }
-            }
-        }
+            translate([0,0,11]) bulb();
     }
 }
 
-module bottom() {
-    union() {
-        linear_extrude(2) {
-            circle(d=outerD);
-        }
-        
-        difference() {
-            difference() {
-                linear_extrude(10) {
-                    circle(d=outerD2);
-                }
-                linear_extrude(10) {
-                    circle(d=outerD2 - 2);                              
-                }
-            }            
-            
-            translate([(outerD2 -2) /2 -2,0,6]) {
-                translate([1,-2.5,-5])
-                    cube([5,5,10]);
-            }                     
-        }
-    }
-}
-
-module bulp() {
-    difference() {
-        translate([0,0,50]) {   
-            difference() {
-                union(){
-                    //sphere(r = rSphere);
-                    difference(){
-                        translate([0,0,8])
-                            if(Scene == "Moon")
-                                import("Moon.stl");
-                            else if(Scene == "Earth")
-                                import("Earth.stl");
-                        translate([0,0,-28])
-                            cylinder(d = outerD, h = 4);
-                    }
-                    translate([0,0,-28])
-                        cylinder(d = outerD, h = 4);
-                }
-                //translate([0,0,4])
-                //    sphere(r = rSphere);
-            }
-        }
-        union() {
-            translate([0,0,-15]){
-                linear_extrude(bottomHeight + 10) {
-                    circle(d=outerD2);
-                }
-            }
-            
-            translate([0,0,bottomHeight]){
-                linear_extrude(height) {
-                    circle(d=outerD3);
-                }
-            }
-        }
-    }
-}
+// --- MODULES ---
 
 module caddy() {
-    linear_extrude(wTh) {
-        difference(){
-            circle(d=outerD2 - tolerance);
-            translate([-8.25,0,0]){
-                square([57, 28 + wTh*2], true);
-            }
-            translate([20.25,-outerD2/2,0]){
-                square([30, outerD2], false);
-            }
-            
-            translate([-8,-20,0]){
-                square([50, 5], true);
-            }
-            translate([-8,-28,0]){
-                square([40, 5], true);
-            }
-            translate([-3,-36,0]){
-                square([25, 5], true);
-            }
-
-            translate([-8, 20,0]){
-                square([50, 5], true);
-            }
-            translate([-8, 28,0]){
-                square([40, 5], true);
-            }
-            translate([-8, 36,0]){
-                square([25, 5], true);
-            }
-
-            translate([17,-40,0]){
-                circle(1.5);
-            }
-            translate([17,40,0]){
-                circle(1.5);
-            }
-
-            translate([-27,-34,0]){
-                circle(1.5);
-            }
-            translate([-27,34,0]){
-                circle(1.5);
-            }
-
-            translate([-43.5,0,0]){
-                circle(1.5);
-            }
-            
-        }
-    }
-
-    translate([-10.75,0,0]){
-        cage();
-    }
-}
-
-module bar() {
-    devKitL = 58.5;
-    w = wBar;
-    wG = 5;
-    h = 3;
-    
     difference() {
-        linear_extrude(h) {            
-            square([devKitL, w], false);
+        union() {
+            linear_extrude(wTh) {
+                difference(){
+                    circle(d=outerD2 - tolerance);
+                    // Weight reduction / ventilation slots
+                    translate([-8, -20, 0]) square([50, 5], true);
+                    translate([-8, -28, 0]) square([40, 5], true);
+                    translate([-3, -36, 0]) square([25, 5], true);
+                    translate([-8, 20, 0]) square([50, 5], true);
+                    translate([-8, 28, 0]) square([40, 5], true);
+                    translate([-8, 36, 0]) square([25, 5], true);
+                    
+                    // Mounting holes for case posts
+                    translate([17, -40, 0]) circle(1.5);
+                    translate([17, 40, 0]) circle(1.5);
+                    translate([-27, -34, 0]) circle(1.5);
+                    translate([-27, 34, 0]) circle(1.5);
+                    if(!hasDisplay) translate([-43.5, 0, 0]) circle(1.5);
+                }
+            }
+            translate([offset_x, 0, 0]) cage();
         }
         
-        translate([devKitL - 25, (w - wG) / 2, 0]) {
-            linear_extrude(h) {
-                square([25, 5], false);
+        // Slots for pin headers
+        translate([offset_x, 0, 0]) {
+            for(i = [-1, 1]) {
+                translate([0, i * (t_w / 2 - pin_offset), 0])
+                    cube([b_len, 3, wTh * 3], true);
             }
         }
-    }
-    
-    translate([devKitL - 6,w,0]){
-        linear_extrude(h) {
-            polygon(points=[[0,0],[6,0],[0,2]]);
+        
+        // Collision cut for OLED display
+        if(hasDisplay) {
+            // Remove edge material to clear the display unit at 180 degrees
+            translate([-(outerD2/2), 0, wTh/2])
+                cube([15, oled_w + 5, wTh + 2], true);
         }
-    }
-    
-    mirror([0,1,0]) {
-        translate([devKitL - 6,0,0]){
-            linear_extrude(h) {
-                polygon(points=[[0,0],[6,0],[0,2]]);
-            }
-        }
-    }
-    
-    
-    translate([0,0,h]){
-        linear_extrude(9) {            
-            square([4, w], false);
-        }
-    }
-    
-    translate([16,0,h]){
-        linear_extrude(5) {            
-            square([10, w], false);
-        }
-    }
 
+        // Clean cut for caddy edge
+        translate([20 + 50, 0, 0])
+            cube([100, outerD, 100], true);
+    }
 }
 
 module cage() {
-    devKitL = 56;
-    devKitW = 29;
-    devKitWi = 28;    
-    devKitLi = 52;
-    devKitTh = 7.8;
-    
-    w = wTh;
+    w_cage = 1.0; 
+    t_l = b_len + 0.5;
+    wall_h = b_hgt + wTh + 2.0; 
+    snap_l = t_l * 0.7; 
+    snap_depth = 0.7; 
 
     difference() {
-        linear_extrude(devKitTh + w) {
-            difference() {
-                translate([w, 0, 0]) {
-                    square([devKitL + w, devKitW + w*2], true);
-                }
-                square([devKitL, devKitW], true);
-            }
-        }
+        // Outer wall
+        translate([0, 0, wall_h/2])
+            cube([t_l + 2*w_cage, t_w + 2*w_cage, wall_h], true);
         
-        //Das Loch für USB
-        translate([devKitL / 2 +w, 0, w + 3]) {
-            cube([w*2, 10, 6], true);
-        }
-    }
-    
-    
-    linear_extrude(w) {
-        translate([w, 0, devKitTh + w]) {
-            difference() {
-                square([devKitL + w, devKitW + w*2], true);
-                
-                translate([w - 3, devKitWi / 2 - w, 0]) {
-                    square([devKitLi, w * 2], true);
-                }
-                translate([w - 3, -devKitWi / 2 + w, 0]) {
-                    square([devKitLi, w * 2], true);
-                }
-            }
-        }
-    }
-    
-    translate([devKitL / 2 + w - 19, -4.5, devKitTh + w]) {
-        linear_extrude(1) {
-            square([20, 21]);
-        }       
-        difference() {
-            linear_extrude(6) {
-                square([20, wBar + wTh]);
-            }
-            translate([0, 1, 1]) {
-                linear_extrude(4) {
-                    square([19, wBar]);
-                }
-            }
+        // Internal pocket for the board
+        translate([0, 0, wTh + (b_hgt + 5)/2])
+            cube([t_l, t_w, b_hgt + 5], true);
             
-            translate([9, 0, 1]) {
-                linear_extrude(4) {
-                    square([5, wBar + wTh]);
+        // USB port cutout
+        translate([t_l/2 + w_cage/2, 0, wTh + 2.5])
+            cube([w_cage + 2, usb_w, 5], true);
+    }
+    
+    // Snaps to hold the board in place
+    for(i = [-1, 1]) {
+        translate([-snap_l/2, i * (t_w/2), b_hgt + wTh - 2.3]) {
+            rotate([90, 0, 90]) { 
+                linear_extrude(height = snap_l) {
+                    polygon(points=[
+                        [0, 0],              
+                        [i * -snap_depth, 0.4], 
+                        [0, 4] 
+                    ]);
                 }
             }
         }
@@ -429,38 +205,172 @@ module sector(d, a1, a2) {
     }
 }
 
-module slice(r=3.0,a1=0, a2=30) { 
+module slice(r=3.0, a1=0, a2=30) { 
     angle = a2 - a1;
     slices = ceil(angle / 90);
-    
-    aStart = a1;
-    aEnd = slices == 1 ? a2 : a1 + 90;
-    
     lastSlice = angle % 90 > 0 ? angle % 90 : 90;
     
     union(){
         for(s=[0:1:slices-1]){
-            aStart = aStart + s * 90;
-            aEnd = s == slices-1 ? aStart + lastSlice : aStart + 90;
+            startAngle = a1 + s * 90;
+            endAngle = (s == slices-1) ? startAngle + lastSlice : startAngle + 90;
             intersection() {
                 circle(r=r);
-                rotate(aStart) square(r);
-                rotate(aEnd - 90) square(r);
+                rotate(startAngle) square(r);
+                rotate(endAngle - 90) square(r);
             }         
         }
     }
 }
 
-offsetZ1 = 0;
-module postHole(xPos, yPos, height)
-{
+module postHole(xPos, yPos, height) {
     rPost = 3.5;
     rPost2 = 1.05;
 
-    difference() 
-    {    
-        translate([xPos,yPos, offsetZ1]) cylinder(h=height, r=rPost);
-                
-        translate([xPos,yPos, offsetZ1 + height/2 +1]) cylinder(h=height -1, r=rPost2);
+    difference() {    
+        translate([xPos, yPos, 0]) cylinder(h=height, r=rPost);
+        // Hole for self-tapping screw
+        translate([xPos, yPos, height/2 + 1]) cylinder(h=height, r=rPost2);
     }   
+}
+
+module bulb() {
+    difference() {
+        translate([0,0,50]) {   
+            difference() {
+                union(){
+                    difference(){
+                        translate([0,0,8]) {
+                            if(Scene == "Moon")
+                                import(str(pattern_dir, "Moon.stl"));
+                            else if(Scene == "Earth")
+                                import(str(pattern_dir, "Earth.stl"));
+                            else if(Scene == "Mars")
+                                import(str(pattern_dir, "Mars.stl"));
+                        }
+                        // Flatten bottom for ring mount
+                        translate([0,0,-28])
+                            cylinder(d = outerD, h = 4);
+                    }
+                    translate([0,0,-28])
+                        cylinder(d = outerD, h = 4);
+                }
+            }
+        }
+        union() {
+            // Hollow interior
+            translate([0,0,-15])
+                linear_extrude(bottomHeight + 10) circle(d=outerD2);
+            
+            // LED Ring seat
+            translate([0,0,bottomHeight])
+                linear_extrude(height) circle(d=outerD3);
+        }
+    }
+}
+
+module bottom() {
+    union() {
+        // Base plate
+        linear_extrude(2) circle(d=outerD);
+        
+        // Inner rim for snap-fit/alignment
+        difference() {
+            difference() {
+                linear_extrude(10) circle(d=outerD2);
+                linear_extrude(10) circle(d=outerD2 - 2);                                             
+            }            
+            // USB cable clearance
+            translate([(outerD2 - 2) / 2 - 2, 0, 6]) {
+                translate([1, -2.5, -5]) cube([5, 5, 10]);
+            }                      
+        }
+    }
+}
+
+module case() {
+    difference() {
+        union() {
+            difference() {
+                union() {
+                    // Main enclosure body
+                    difference() {
+                        linear_extrude(bottomHeight) circle(d=outerD);
+                        linear_extrude(bottomHeight - 1) circle(d=outerD2);
+                    }
+                    
+                    if(hasDisplay) {
+                        // Internal block to hold the OLED
+                        // Centered vertically to match the cutout
+                        rotate([0, 0, 180])
+                        translate([outerD2/2 - 2, -oled_w/2 - 1, 2.5])
+                            cube([3, oled_w + 2, oled_h + 2]);
+                    }
+                }
+  
+                if(hasDisplay) {
+                    // OLED Cutouts
+                    rotate([0, 0, 180])
+                    translate([outerD/2 - 2, 0, bottomHeight/2]) {
+                        // 1. Viewing window
+                        cube([10, oled_screen_w, oled_screen_h], true);
+                        
+                        // 2. Internal pocket for PCB flush mounting
+                        translate([-1, 0, 0])
+                            cube([2, oled_w + 0.5, oled_h + 0.5], true);
+                    }          
+                }
+                
+                // USB Port hole
+                translate([outerD2/2 - 2, 0, 2]) {
+                    rotate([0, 90, 0]) cylinder(h=10, d=5);
+                    translate([1, -2.5, -5]) cube([5, 5, 5]);
+                }
+            }
+            
+            // Upper mounting ring
+            translate([0,0,bottomHeight]){
+                difference() {
+                    linear_extrude(height) circle(d=outerD3+4);
+                    translate([0,0,height-groove]) {
+                        linear_extrude(groove) {
+                            difference() {
+                                circle(d=innerD2);
+                                circle(d=innerD1);
+                            }        
+                        }
+                    }
+                }
+            }
+
+            // Internal mounting posts
+            translate([0, 0, bottomHeight]) {
+                mirror([0, 0, 1]) {
+                    postHole(-27, 34, 15);
+                    postHole(-27, -34, 15);
+                    postHole(17, -40, 15);
+                    postHole(17, 40, 15);
+                    if(!hasDisplay) postHole(-43.5, 0, 15); 
+                }
+            }
+        }
+        
+        // Slots for LED ring wiring/mounting at the top edge
+        translate([0, 0, bottomHeight - 1]){
+            difference() {                
+                linear_extrude(height + 2) {
+                    union() {
+                        slice(r=innerD2/2, a1=0, a2=10);
+                        slice(r=innerD2/2, a1=350, a2=360);
+                    }
+                }
+                linear_extrude(height + 2) {
+                    union() {
+                        slice(r=innerD1/2, a1=0, a2=10);
+                        slice(r=innerD1/2, a1=350, a2=360);
+                    }
+                }
+            }
+        }
+    }
 }

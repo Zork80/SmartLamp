@@ -22,9 +22,17 @@ The lamp offers a modern web interface for control and configuration and integra
 * 5x M2 self-tapping screws
 * USB cable and power supply (5V)
 
-## 3D Printing
+## 3D Printing & CAD Customization
 
-The files for 3D printing and instructions can be found here: [SmartLamp on Printables](https://www.printables.com/model/237208-smartlamp)
+The 3D-printable parts and instructions are available on [Printables](https://www.printables.com/model/237208-smartlamp).
+
+The project includes OpenSCAD source files in `cad/` to customize the enclosure and lampshades:
+* **`cad/SmartLamp.scad`**: Parametric assembly for the base plate, casing, internal caddy (ESP32 DevKit or ESP32-C6 SuperMini), and the lampshade bulb.
+* **`cad/patterns/`**: Heightmap textures (Moon, Earth, Mars) and the `geodesic_mapped_double.py` generator script to produce custom spherical lithophane STL meshes.
+
+> [!IMPORTANT]
+> **Lampshade Bottom Trimming:**  
+> When `SmartLamp.scad` renders the spherical lampshade (`bulb()`), the lower portion of the sphere (everything south of approx. -35° latitude / the South Pole) is cut away to form the circular mounting collar and LED ring seat. Keep this in mind when designing or inspecting heightmaps: any features located near the south pole of a heightmap will naturally reside in this trimmed base area.
 
 ## PlatformIO Environments
 
