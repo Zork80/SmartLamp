@@ -40,10 +40,10 @@ The project includes pre-configured environments in `platformio.ini`:
 
 | Environment | Target Board | Description | Default Upload |
 | :--- | :--- | :--- | :--- |
-| **`[env:SmartLamp-24]`** | ESP32 DevKit | Standard lamp with 24 WS2812 LEDs | OTA |
-| **`[env:SmartLamp-12]`** | ESP32 DevKit | Compact lamp with 12 WS2812 LEDs | OTA |
-| **`[env:RoofLight]`** | ESP32 DevKit | Ceiling lamp with relay control, spotlight & PIR sensor | OTA |
-| **`[env:SmartLamp-C6]`** | ESP32-C6 SuperMini | RISC-V ESP32-C6 dev board | USB (`/dev/ttyACM0`) |
+| **`[env:SmartLamp-24]`** | ESP32 DevKit | Standard lamp with 24 WS2812 LEDs | USB (Serial) |
+| **`[env:SmartLamp-12]`** | ESP32 DevKit | Compact lamp with 12 WS2812 LEDs | USB (Serial) |
+| **`[env:RoofLight]`** | ESP32 DevKit | Ceiling lamp with relay control, spotlight & PIR sensor | USB (Serial) |
+| **`[env:SmartLamp-C6]`** | ESP32-C6 SuperMini | RISC-V ESP32-C6 dev board | USB (CDC/ACM) |
 | **`[env:SmartLamp-Nano]`** | Arduino Nano (ATmega328) | Offline version with physical push buttons | USB Serial |
 
 ## Build Flags & Customization
@@ -59,14 +59,26 @@ You can customize each environment in `platformio.ini` using `build_flags`:
 * **`-D HAS_BUTTONS`**: Enables physical push button controls (Pins 2 & 3).
 * **`-D SKIP_THEME_OFF`**: When cycling through themes with physical buttons, skips the "Off" state.
 
-## Software Installation
+## Software Installation & Flashing
 
+### 1. Initial Flashing via USB
 1. Open the project folder in VS Code with the PlatformIO extension installed.
-2. Select the target environment (e.g., `env:SmartLamp-C6` or `env:SmartLamp-24`) from the bottom status bar.
-3. Connect the board to your computer via USB.
+2. Select your target environment (e.g., `env:SmartLamp-24` or `env:SmartLamp-C6`) from the bottom status bar.
+3. Connect the board to your computer via USB (PlatformIO automatically detects the serial port).
 4. Execute PlatformIO commands:
    * **`Upload`** (compiles and flashes the firmware).
    * **`Upload Filesystem Image`** (uploads the web interface files in `data/` to SPIFFS).
+
+### 2. Over-The-Air (OTA) Updates
+Once your SmartLamp is connected to your local Wi-Fi network and has obtained an IP address, you can update both firmware and filesystem images wirelessly without plugging in a USB cable:
+
+1. Open `platformio.ini`.
+2. In your active environment block, uncomment the OTA settings and enter your lamp's local IP address:
+   ```ini
+   upload_protocol = espota
+   upload_port = 192.168.178.50  ; Replace with your lamp's actual IP address
+   ```
+3. Run **`Upload`** or **`Upload Filesystem Image`** in PlatformIO as usual. PlatformIO will send the update over Wi-Fi.
 
 ## Wi-Fi & Configuration
 
